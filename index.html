@@ -42,30 +42,50 @@
 
         const riderUUID = "BP2A.250605.031.A3"; 
 
-        // 🔧 [จุดแก้ไขสําคัญของพี่ยาง 🏡] ใส่พิกัด "บ้านของพี่" ตรงนี้เลยครับคราบบบ
-        // เอาตัวเลขละติจูด ลองจิจูดของบ้านพี่มาสลับเปลี่ยนแทนเลขด้านล่างนี้ได้เลยครับพี่ยาง
-        const homeLatitude = 12.6472326;  // 👈 เปลี่ยนเป็นละติจูดบ้านพี่
-        const homeLongitude = 102.0947158; // 👈 เปลี่ยนเป็นลองจิจูดบ้านพี่
+        // 🔧 [จุดพิกัดบ้านพี่ซัง 🏡] ใส่พิกัดบ้านพี่ตรงนี้เหมือนเดิมเลยครับ
+        const homeLatitude = 12.6100;  
+        const homeLongitude = 102.1100; 
 
-        // สูตรคำนวณระยะห่างผิวโลก (Haversine Formula) คืนค่าออกมาเป็น "เมตร"
+        // สูตรคำนวณระยะห่างผิวโลก (Haversine Formula) คืนค่าเป็นเมตร
         function getDistanceInMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371000; // รัศมีโลกเป็นเมตร
+            const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                       Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; // ระยะทางหน่วยเป็นเมตร
+            return R * c;
         }
 
-        const map = L.map('map', { zoomControl: false }).setView([13.7600, 100.5100], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        // วาดวงกลมรัศมี 60 เมตรรอบบ้านจางๆ บนแผนที่ ให้แฟนเห็นขอบเขตพื้นที่บ้าน
-        L.circle([homeLatitude, homeLongitude], {
-            color: '#10b981', fillColor: '#10b981', fillOpacity: 0.15, radius: 60
+        const map = L.map('map', { zoomControl: false }).setView([12.6100, 102.1100], 15);
+        
+        // 🗺️ เปลี่ยนสกินแผนที่ใหม่: ใช้ระบบ Stadia Maps (OSM Bright) ตัวนี้จะดึงชื่อร้านค้า ร้านอาหาร คาเฟ่ 
+        // สถานที่ท่องเที่ยว โรงพยาบาล และปั๊มน้ำมันขึ้นมาโชว์บนแผนที่ชัดเจนมาก แฟนพี่ซังดูรู้เรื่องแน่นอนครับ
+        L.tileLayer('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20,
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+
+        // วาดวงกลมรัศมีบ้าน 60 เมตร
+        L.circle([homeLatitude, homeLongitude], {
+            color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 60
+        }).addTo(map);
+
+        // 🔧 [จุดเพิ่มร้านค้า/ร้านอาหารประจำ 🍔] 
+        // ถ้าพี่อยากฝังหมุดร้านค้าที่พี่ชอบไปรับงานบ่อยๆ ให้แฟนเห็นชัดๆ พี่ยอดพิกัดเพิ่มตรงกลุ่มนี้ได้เลยครับ!
+        const shops = [
+            { name: "จุดรับงาน Shopee 📦", lat: 12.6115, lon: 102.1120, icon: "🏪" },
+            { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6085, lon: 102.1080, icon: "🍔" },
+            { name: "ปั๊มน้ำมันแวะพักรถ ⛽", lat: 12.6150, lon: 102.1150, icon: "⛽" }
+        ];
+
+        // วาดหมุดร้านค้าประจำลงแผนที่ค้างไว้เลย
+        shops.forEach(shop => {
+            const shopIcon = L.divIcon({ html: `<div style="font-size:24px;">${shop.icon}</div>`, className: '' });
+            L.marker([shop.lat, shop.lon], { icon: shopIcon }).addTo(map)
+             .bindPopup(`<b>${shop.name}</b>`); // แฟนจิ้มที่หมุดจะขึ้นชื่อร้านครับ
+        });
 
         let riderMarker;
 
@@ -74,18 +94,14 @@
                 const data = docSnap.data();
                 const pos = [data.latitude, data.longitude];
 
-                // 🎯 แอบคำนวณระยะห่างระหว่าง "ตัวรถพี่ยางตอนนี้" กับ "ตัวบ้าน"
                 const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
 
-                // 🔎 เช็คเงื่อนไขรัศมี 60 เมตร
                 if (distance <= 60) {
-                    // ถ้าใกล้บ้านต่ำกว่า 60 เมตร บังคับแสดงสถานะพักผ่อนทันทีครับพี่!
                     document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
-                    document.getElementById("rider-status").style.color = "#10b981"; // เปลี่ยนตัวหนังสือเป็นสีเขียวสบายตา
+                    document.getElementById("rider-status").style.color = "#10b981";
                 } else {
-                    // ถ้านอกระยะ 60 เมตร ให้ดึงค่าปกติจากมือถือพี่มาโชว์
                     document.getElementById("rider-status").innerText = data.status;
-                    document.getElementById("rider-status").style.color = "#e11d48"; // สีแดงปกติ
+                    document.getElementById("rider-status").style.color = "#e11d48";
                 }
 
                 const bikeIcon = L.divIcon({ html: data.icon || '🏍️💨', className: '', iconSize: [40, 40] });
@@ -97,7 +113,7 @@
                 }
                 map.panTo(pos);
             } else {
-                document.getElementById("rider-status").innerText = "พี่ยางยังไม่ได้เปิดแอปส่งพิกัดครับ";
+                document.getElementById("rider-status").innerText = "พี่ซังยังไม่ได้เปิดแอปส่งพิกัดครับ";
             }
         });
     </script>
