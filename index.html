@@ -60,10 +60,9 @@
 
         const map = L.map('map', { zoomControl: false }).setView([12.6100, 102.1100], 15);
         
-        // 🗺️ เปลี่ยนสกินแผนที่ใหม่: ใช้ระบบ Stadia Maps (OSM Bright) ตัวนี้จะดึงชื่อร้านค้า ร้านอาหาร คาเฟ่ 
-        // สถานที่ท่องเที่ยว โรงพยาบาล และปั๊มน้ำมันขึ้นมาโชว์บนแผนที่ชัดเจนมาก แฟนพี่ซังดูรู้เรื่องแน่นอนครับ
-        L.tileLayer('https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png', {
-            maxZoom: 20,
+        // 🗺️ 🎯 ปรับจุดนี้: ถอยกลับมาใช้เซิร์ฟเวอร์หลักของ OpenStreetMap แท้ๆ ฟรี 100% ตลอดชีพ ไม่ล็อกคีย์ ไม่ขึ้นหน้าเออร์เรอร์แน่นอนครับ!
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
@@ -72,19 +71,18 @@
             color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 60
         }).addTo(map);
 
-        // 🔧 [จุดเพิ่มร้านค้า/ร้านอาหารประจำ 🍔] 
-        // ถ้าพี่อยากฝังหมุดร้านค้าที่พี่ชอบไปรับงานบ่อยๆ ให้แฟนเห็นชัดๆ พี่ยอดพิกัดเพิ่มตรงกลุ่มนี้ได้เลยครับ!
+        // 🔧 [จุดเพิ่มร้านค้า/ร้านอาหารประจำ 🍔] พี่หยอดพิกัดจุดรับงานประจำในจันทบุรีเพิ่มเองตรงนี้ได้เลยครับคราบบบ
         const shops = [
             { name: "จุดรับงาน Shopee 📦", lat: 12.6115, lon: 102.1120, icon: "🏪" },
             { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6085, lon: 102.1080, icon: "🍔" },
             { name: "ปั๊มน้ำมันแวะพักรถ ⛽", lat: 12.6150, lon: 102.1150, icon: "⛽" }
         ];
 
-        // วาดหมุดร้านค้าประจำลงแผนที่ค้างไว้เลย
+        // วาดหมุดร้านค้าประจำลงแผนที่
         shops.forEach(shop => {
             const shopIcon = L.divIcon({ html: `<div style="font-size:24px;">${shop.icon}</div>`, className: '' });
             L.marker([shop.lat, shop.lon], { icon: shopIcon }).addTo(map)
-             .bindPopup(`<b>${shop.name}</b>`); // แฟนจิ้มที่หมุดจะขึ้นชื่อร้านครับ
+             .bindPopup(`<b>${shop.name}</b>`);
         });
 
         let riderMarker;
