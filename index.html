@@ -22,6 +22,11 @@
             box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3); transition: all 0.2s;
         }
         .check-btn:active { transform: scale(0.98); }
+        
+        /* 🎯 แต่งปุ่มซูมให้อยู่ฝั่งขวามือ จะได้ไม่บังกล่องสถานะด้านล่าง */
+        .leaflet-top.leaflet-left {
+            left: auto; right: 10px; top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -63,10 +68,21 @@
             return R * c;
         }
 
-        const map = L.map('map', { zoomControl: false }).setView([homeLatitude, homeLongitude], 14);
+        // 🎯 [จุดปรับซูม] เปลี่ยนเป็น zoomControl: true เพื่อเปิดแถบปุ่มกด ซูมเข้า-ซูมออก (+ / -) ให้แฟนใช้งานครับ
+        const map = L.map('map', { zoomControl: true }).setView([homeLatitude, homeLongitude], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
         L.circle([homeLatitude, homeLongitude], { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 80 }).addTo(map);
+
+        const shops = [
+            { name: "จุดรับงาน Shopee 📦", lat: 12.6485, lon: 102.0955, icon: "🏪" },
+            { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6460, lon: 102.0935, icon: "🍔" }
+        ];
+
+        shops.forEach(shop => {
+            const shopIcon = L.divIcon({ html: `<div style="font-size:26px;">${shop.icon}</div>`, className: '' });
+            L.marker([shop.lat, shop.lon], { icon: shopIcon }).addTo(map).bindPopup(`<b>${shop.name}</b>`);
+        });
 
         let riderMarker;
 
@@ -92,8 +108,9 @@
                         document.getElementById("rider-status").style.color = "#e11d48";
                     }
 
+                    // 🎯 [จุดปรับไอคอนสายคลีน] เอาควันออก เหลือแค่รูปมอเตอร์ไซค์ 🏍️ โดดๆ ขยายใหญ่เต็มตา 45px ครับพี่ยาง
                     const bikeIcon = L.divIcon({ 
-                        html: `<div style="font-size: 42px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));">${data.icon || '🏍️💨'}</div>`, 
+                        html: `<div style="font-size: 45px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));">🏍️</div>`, 
                         className: '', iconSize: [60, 60], iconAnchor: [30, 45]
                     });
                     
@@ -104,14 +121,13 @@
                     }
                     map.setView(pos, 18);
 
-                    // 🎯 [หมัดเด็ดซ้อนแผน] เจนรูปภาพแผนที่สตรีทช็อต ณ พิกัดปัจจุบันของพี่ยาง ยิงส่งกลับไปแอปทันที
                     const mapShotUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-motorcycle+f43f5e(${data.longitude},${data.latitude})/${data.longitude},${data.latitude},16,0/400x400?access_token=pk.eyJ1IjoibWFwYm94YXBpIiwiYSI6ImNreDJnd3N4bTFrbTIydm10Z3B4OG9xa2EifQ==`;
 
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID,
                         checked_at: serverTimestamp(),
                         display_time: new Date().toLocaleString('th-TH', { hour12: false }),
-                        map_image: mapShotUrl // ส่งลิงก์รูปพิกัดแนบไปในคลังสถิติ
+                        map_image: mapShotUrl
                     });
 
                     btn.innerText = "อัปเดตตำแหน่งแล้ว  ✓";
