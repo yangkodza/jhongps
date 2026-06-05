@@ -33,13 +33,13 @@
     <div id="map"></div>
     <div class="info-box">
         <h3 style="margin:0 0 5px 0; color: #334155;">ระบบติดตามพี่ยาง</h3>
-        <div id="rider-status" style="font-weight: bold; color: #64748b; margin-bottom: 5px;">กดปุ่มด้านล่างเพื่อค้นหาตำแหน่ง</div>
+        <div id="rider-status" style="font-weight: bold; color: #64748b; margin-bottom: 5px;">กดปุ่มด้านล่างเพื่อติดตามเรียลไทม์</div>
         <button class="check-btn" id="btn-check" onclick="checkRiderLocation()">เช็คตำแหน่งพี่ยาง 🔍</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zWk",
@@ -61,7 +61,7 @@
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      const_cos = Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                       Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             return R * c;
@@ -83,25 +83,33 @@
         });
 
         let riderMarker;
+        let unsubscribeLive = null; // ตัวแปรสำหรับเปิด-ปิดท่อเรียลไทม์
+        let liveTimeout = null;
 
-        // 🎯 [ฟังก์ชันคำนวณขนาดรถตามระดับซูม] ยิ่งซูมเข้ายิ่งใหญ่ ยิ่งซูมออกยิ่งหดคันเล็ก
         function getDynamicIconSize(zoomLevel) {
-            // คำนวณขนาดตัวหนังสือ (px) สัมพันธ์กับความลึกการซูมแผนที่
             const baseSize = 45; 
             const diff = zoomLevel - 18; 
             const newSize = baseSize + (diff * 8); 
-            return Math.max(15, Math.min(newSize, 70)); // บล็อกขนาดไว้ไม่ให้เล็กกว่า 15px และไม่ใหญ่เกิน 70px
+            return Math.max(15, Math.min(newSize, 70));
         }
 
         window.checkRiderLocation = async function() {
             const btn = document.getElementById("btn-check");
-            btn.innerText = "กำลังสแกนเรดาร์... ⏳";
+            
+            // ถ้าท่อเดิมเปิดอยู่ ให้เคลียร์ของเก่าก่อนรันรอบใหม่
+            if (unsubscribeLive) {
+                unsubscribeLive();
+                clearTimeout(liveTimeout);
+            }
+
+            btn.innerText = "🔴 กำลังติดตามสดเรียลไทม์...";
+            btn.style.background = "linear-gradient(135deg, #10b981, #059669)"; // เปลี่ยนปุ่มเป็นสีเขียวบอกสถานะ Live
             btn.disabled = true;
 
-            try {
-                const docRef = doc(db, "locations", riderUUID);
-                const docSnap = await getDoc(docRef);
+            let isFirstLoad = true;
 
+            // 🎯 [หมัดเด็ดเปลี่ยนเกม] เปิดท่อสตรีมมิ่งเกาะติดหน้าจอสดเรียลไทม์ ขยับตามรถพี่ยางทันที!
+            unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), async (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const pos = [data.latitude, data.longitude];
@@ -115,48 +123,53 @@
                         document.getElementById("rider-status").style.color = "#e11d48";
                     }
 
-                    // คำนวณขนาดเริ่มต้นจากระดับการซูมปัจจุบัน
                     const currentZoom = map.getZoom();
                     const iconSize = getDynamicIconSize(currentZoom);
 
                     const bikeIcon = L.divIcon({ 
-                        html: `<div id="bike-icon-wrapper" style="font-size: ${iconSize}px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); transition: font-size 0.1s;">🏍️</div>`, 
+                        html: `<div id="bike-icon-wrapper" style="font-size: ${iconSize}px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); transition: all 0.5s ease-out;">💡🏍️</div>`, 
                         className: '', iconSize: [60, 60], iconAnchor: [30, 45]
                     });
                     
                     if (!riderMarker) {
                         riderMarker = L.marker(pos, { icon: bikeIcon }).addTo(map);
                     } else {
-                        riderMarker.setLatLng(pos);
+                        riderMarker.setLatLng(pos); // 🌟 ย้ายพิกัดหมุดสดๆ กลางอากาศ รถขยับหมุดขยับตามทันที!
                         riderMarker.setIcon(bikeIcon);
                     }
-                    map.setView(pos, 18);
+                    
+                    // เลื่อนหน้าจอแผนที่ตามรถพี่ยางไปเรื่อยๆ
+                    map.setView(pos, map.getZoom() < 16 ? 18 : map.getZoom());
 
-                    const mapShotUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-motorcycle+f43f5e(${data.longitude},${data.latitude})/${data.longitude},${data.latitude},16,0/400x400?access_token=pk.eyJ1IjoibWFwYm94YXBpIiwiYSI6ImNreDJnd3N4bTFrbTIydm10Z3B4OG9xa2EifQ==`;
+                    // บันทึกสถิติและเจนรูปภาพย่อเฉพาะ "จังหวะแรกที่แฟนกดปุ่ม" เท่านั้น (ไม่บันทึกซ้ำๆ ทุกๆ วินาทีให้รกคลัง)
+                    if (isFirstLoad) {
+                        const mapShotUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-motorcycle+f43f5e(${data.longitude},${data.latitude})/${data.longitude},${data.latitude},16,0/400x400?access_token=pk.eyJ1IjoibWFwYm94YXBpIiwiYSI6ImNreDJnd3N4bTFrbTIydm10Z3B4OG9xa2EifQ==`;
 
-                    await addDoc(collection(db, "stats"), {
-                        device_id: riderUUID,
-                        checked_at: serverTimestamp(),
-                        display_time: new Date().toLocaleString('th-TH', { hour12: false }),
-                        map_image: mapShotUrl
-                    });
-
-                    btn.innerText = "อัปเดตตำแหน่งแล้ว  ✓";
-                } else {
-                    document.getElementById("rider-status").innerText = "ไม่พบข้อมูลพิกัดในระบบคราบบบ";
+                        await addDoc(collection(db, "stats"), {
+                            device_id: riderUUID,
+                            checked_at: serverTimestamp(),
+                            display_time: new Date().toLocaleString('th-TH', { hour12: false }),
+                            map_image: mapShotUrl
+                        });
+                        isFirstLoad = false;
+                    }
                 }
-            } catch (error) {
-                console.error(error);
-                document.getElementById("rider-status").innerText = "สัญญาณขัดข้อง ลองใหม่อีกครั้ง";
-            }
+            });
 
-            setTimeout(() => {
+            // 🎯 หน่วงเวลาให้สตรีมมิ่งสด 5 นาที (300,000 มิลลิวินาที) จากนั้นจะคืนค่าปุ่มกดตามปกติ
+            liveTimeout = setTimeout(() => {
+                if (unsubscribeLive) {
+                    unsubscribeLive(); // สั่งปิดท่อเรียลไทม์
+                    unsubscribeLive = null;
+                }
                 btn.innerText = "เช็คตำแหน่งพี่ยาง 🔍";
+                btn.style.background = "linear-gradient(135deg, #e11d48, #be123c)";
                 btn.disabled = false;
-            }, 3000);
+                document.getElementById("rider-status").innerText = "สิ้นสุดการติดตามเรียลไทม์รอบนี้แล้วครับ";
+                document.getElementById("rider-status").style.color = "#64748b";
+            }, 300000); 
         }
 
-        // 🎯 [หมัดเด็ดจับการซูม] เมื่อแฟนเลื่อนซูมเข้า-ออก สั่งย่อขยายขนาดไอคอนมอเตอร์ไซค์ทันทีเรียลไทม์!
         map.on('zoomend', function() {
             const el = document.getElementById('bike-icon-wrapper');
             if (el) {
@@ -165,7 +178,6 @@
                 el.style.fontSize = newSize + 'px';
             }
         });
-
     </script>
 </body>
 </html>
