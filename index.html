@@ -42,9 +42,9 @@
 
         const riderUUID = "BP2A.250605.031.A3"; 
 
-        // 🔧 [จุดพิกัดบ้านพี่ซัง 🏡] ใส่พิกัดบ้านพี่ตรงนี้เหมือนเดิมเลยครับ
-        const homeLatitude = 12.61395;  // 👈 ลบเลขเก่าแล้วใส่เลขนี้แทนครับพี่ซัง 
-        const homeLongitude = 102.11365; // 👈 ลบเลขเก่าแล้วใส่เลขนี้แทนครับพี่ซัง
+        // 🔧 [พิกัดบ้านซอยรักศักดิ์มูลของพี่ซัง 🏡]
+        const homeLatitude = 12.61395;  
+        const homeLongitude = 102.11365; 
 
         // สูตรคำนวณระยะห่างผิวโลก (Haversine Formula) คืนค่าเป็นเมตร
         function getDistanceInMeters(lat1, lon1, lat2, lon2) {
@@ -58,27 +58,25 @@
             return R * c;
         }
 
-        const map = L.map('map', { zoomControl: false }).setView([12.6100, 102.1100], 15);
+        const map = L.map('map', { zoomControl: false }).setView([homeLatitude, homeLongitude], 15);
         
-        // 🗺️ 🎯 ปรับจุดนี้: ถอยกลับมาใช้เซิร์ฟเวอร์หลักของ OpenStreetMap แท้ๆ ฟรี 100% ตลอดชีพ ไม่ล็อกคีย์ ไม่ขึ้นหน้าเออร์เรอร์แน่นอนครับ!
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // วาดวงกลมรัศมีบ้าน 70 เมตร
+        // 🎯 ปรับตรงนี้: ขยายวงกลมสีเขียวรอบบ้านบนจอแฟนให้กว้างขึ้นเป็นรัศมี 80 เมตร
         L.circle([homeLatitude, homeLongitude], {
-            color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 60
+            color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 80
         }).addTo(map);
 
-        // 🔧 [จุดเพิ่มร้านค้า/ร้านอาหารประจำ 🍔] พี่หยอดพิกัดจุดรับงานประจำในจันทบุรีเพิ่มเองตรงนี้ได้เลยครับคราบบบ
+        // [จุดเพิ่มร้านค้าประจำ 🍔] 
         const shops = [
             { name: "จุดรับงาน Shopee 📦", lat: 12.6115, lon: 102.1120, icon: "🏪" },
             { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6085, lon: 102.1080, icon: "🍔" },
             { name: "ปั๊มน้ำมันแวะพักรถ ⛽", lat: 12.6150, lon: 102.1150, icon: "⛽" }
         ];
 
-        // วาดหมุดร้านค้าประจำลงแผนที่
         shops.forEach(shop => {
             const shopIcon = L.divIcon({ html: `<div style="font-size:24px;">${shop.icon}</div>`, className: '' });
             L.marker([shop.lat, shop.lon], { icon: shopIcon }).addTo(map)
@@ -94,7 +92,8 @@
 
                 const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
 
-                if (distance <= 60) {
+                // 🎯 ปรับตรงนี้: เช็คเงื่อนไขถ้าระยะห่างต่ำกว่าหรือเท่ากับ 80 เมตร สลับสถานะทันที
+                if (distance <= 80) {
                     document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
                     document.getElementById("rider-status").style.color = "#10b981";
                 } else {
