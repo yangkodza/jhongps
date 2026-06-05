@@ -42,9 +42,9 @@
 
         const riderUUID = "BP2A.250605.031.A3"; 
 
-        // 🔧 [พิกัดบ้านซอยรักศักดิ์มูลของพี่ซัง 🏡]
-        const homeLatitude = 12.61395;  
-        const homeLongitude = 102.11365; 
+        // 🎯 [ล็อกพิกัดหลังคาบ้านจริงของพี่ซังเรียบร้อยครับ 🏡]
+        const homeLatitude = 12.647361;  
+        const homeLongitude = 102.094667; 
 
         // สูตรคำนวณระยะห่างผิวโลก (Haversine Formula) คืนค่าเป็นเมตร
         function getDistanceInMeters(lat1, lon1, lat2, lon2) {
@@ -58,23 +58,22 @@
             return R * c;
         }
 
-        const map = L.map('map', { zoomControl: false }).setView([homeLatitude, homeLongitude], 15);
+        const map = L.map('map', { zoomControl: false }).setView([homeLatitude, homeLongitude], 16);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 🎯 ปรับตรงนี้: ขยายวงกลมสีเขียวรอบบ้านบนจอแฟนให้กว้างขึ้นเป็นรัศมี 80 เมตร
+        // กางวงกลมรัศมี 80 เมตรรอบหลังคาบ้านจริงของพี่ซัง
         L.circle([homeLatitude, homeLongitude], {
             color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 80
         }).addTo(map);
 
         // [จุดเพิ่มร้านค้าประจำ 🍔] 
         const shops = [
-            { name: "จุดรับงาน Shopee 📦", lat: 12.6115, lon: 102.1120, icon: "🏪" },
-            { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6085, lon: 102.1080, icon: "🍔" },
-            { name: "ปั๊มน้ำมันแวะพักรถ ⛽", lat: 12.6150, lon: 102.1150, icon: "⛽" }
+            { name: "จุดรับงาน Shopee 📦", lat: 12.6485, lon: 102.0955, icon: "🏪" },
+            { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6460, lon: 102.0935, icon: "🍔" }
         ];
 
         shops.forEach(shop => {
@@ -92,7 +91,7 @@
 
                 const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
 
-                // 🎯 ปรับตรงนี้: เช็คเงื่อนไขถ้าระยะห่างต่ำกว่าหรือเท่ากับ 80 เมตร สลับสถานะทันที
+                // เช็คเงื่อนไขถ้าระยะห่างจากหลังคาบ้านต่ำกว่าหรือเท่ากับ 80 เมตร สลับสถานะพักผ่อน
                 if (distance <= 80) {
                     document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
                     document.getElementById("rider-status").style.color = "#10b981";
