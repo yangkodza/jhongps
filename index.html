@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แฟนส่องไรเดอร์ 💖</title>
+    <title>Tag GPS 🏍️</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -23,7 +23,6 @@
         }
         .check-btn:active { transform: scale(0.98); }
         
-        /* 🎯 แต่งปุ่มซูมให้อยู่ฝั่งขวามือ จะได้ไม่บังกล่องสถานะด้านล่าง */
         .leaflet-top.leaflet-left {
             left: auto; right: 10px; top: 10px;
         }
@@ -68,7 +67,6 @@
             return R * c;
         }
 
-        // 🎯 [จุดปรับซูม] เปลี่ยนเป็น zoomControl: true เพื่อเปิดแถบปุ่มกด ซูมเข้า-ซูมออก (+ / -) ให้แฟนใช้งานครับ
         const map = L.map('map', { zoomControl: true }).setView([homeLatitude, homeLongitude], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
@@ -85,6 +83,15 @@
         });
 
         let riderMarker;
+
+        // 🎯 [ฟังก์ชันคำนวณขนาดรถตามระดับซูม] ยิ่งซูมเข้ายิ่งใหญ่ ยิ่งซูมออกยิ่งหดคันเล็ก
+        function getDynamicIconSize(zoomLevel) {
+            // คำนวณขนาดตัวหนังสือ (px) สัมพันธ์กับความลึกการซูมแผนที่
+            const baseSize = 45; 
+            const diff = zoomLevel - 18; 
+            const newSize = baseSize + (diff * 8); 
+            return Math.max(15, Math.min(newSize, 70)); // บล็อกขนาดไว้ไม่ให้เล็กกว่า 15px และไม่ใหญ่เกิน 70px
+        }
 
         window.checkRiderLocation = async function() {
             const btn = document.getElementById("btn-check");
@@ -108,9 +115,12 @@
                         document.getElementById("rider-status").style.color = "#e11d48";
                     }
 
-                    // 🎯 [จุดปรับไอคอนสายคลีน] เอาควันออก เหลือแค่รูปมอเตอร์ไซค์ 🏍️ โดดๆ ขยายใหญ่เต็มตา 45px ครับพี่ยาง
+                    // คำนวณขนาดเริ่มต้นจากระดับการซูมปัจจุบัน
+                    const currentZoom = map.getZoom();
+                    const iconSize = getDynamicIconSize(currentZoom);
+
                     const bikeIcon = L.divIcon({ 
-                        html: `<div style="font-size: 45px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));">🏍️</div>`, 
+                        html: `<div id="bike-icon-wrapper" style="font-size: ${iconSize}px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); transition: font-size 0.1s;">🏍️</div>`, 
                         className: '', iconSize: [60, 60], iconAnchor: [30, 45]
                     });
                     
@@ -118,6 +128,7 @@
                         riderMarker = L.marker(pos, { icon: bikeIcon }).addTo(map);
                     } else {
                         riderMarker.setLatLng(pos);
+                        riderMarker.setIcon(bikeIcon);
                     }
                     map.setView(pos, 18);
 
@@ -144,6 +155,17 @@
                 btn.disabled = false;
             }, 3000);
         }
+
+        // 🎯 [หมัดเด็ดจับการซูม] เมื่อแฟนเลื่อนซูมเข้า-ออก สั่งย่อขยายขนาดไอคอนมอเตอร์ไซค์ทันทีเรียลไทม์!
+        map.on('zoomend', function() {
+            const el = document.getElementById('bike-icon-wrapper');
+            if (el) {
+                const currentZoom = map.getZoom();
+                const newSize = getDynamicIconSize(currentZoom);
+                el.style.fontSize = newSize + 'px';
+            }
+        });
+
     </script>
 </body>
 </html>
