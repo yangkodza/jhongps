@@ -7,26 +7,35 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; }
+        body { margin: 0; padding: 0; font-family: sans-serif; background: #f8fafc; }
         #map { height: 100vh; width: 100%; }
         .info-box {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: white; padding: 15px 25px; border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; text-align: center;
+            background: white; padding: 15px 25px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; text-align: center;
+            width: 85%; max-width: 340px;
         }
+        .check-btn {
+            background: linear-gradient(135deg, #e11d48, #be123c); color: white;
+            border: none; padding: 12px 20px; font-size: 16px; font-weight: bold;
+            border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3); transition: all 0.2s;
+        }
+        .check-btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
     <div class="info-box">
-        <h3 style="margin:0 0 5px 0;">สถานะคนหล่อ</h3>
-        <div id="rider-status" style="font-weight: bold; color: #e11d48;">กำลังเชื่อมต่อสัญญาณ...</div>
+        <h3 style="margin:0 0 5px 0; color: #334155;">ระบบติดตามพี่ยาง</h3>
+        <div id="rider-status" style="font-weight: bold; color: #64748b; margin-bottom: 5px;">กดปุ่มด้านล่างเพื่อค้นหาตำแหน่ง</div>
+        <button class="check-btn" id="btn-check" onclick="checkRiderLocation()">เช็คตำแหน่งพี่ยาง 🔍</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zWk",
@@ -39,14 +48,10 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
         const riderUUID = "BP2A.250605.031.A3"; 
-
-        // 🎯 [ล็อกพิกัดหลังคาบ้านจริงของพี่ซังเรียบร้อยครับ 🏡]
         const homeLatitude = 12.647361;  
         const homeLongitude = 102.094667; 
 
-        // สูตรคำนวณระยะห่างผิวโลก (Haversine Formula) คืนค่าเป็นเมตร
         function getDistanceInMeters(lat1, lon1, lat2, lon2) {
             const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -58,60 +63,71 @@
             return R * c;
         }
 
-        const map = L.map('map', { zoomControl: false }).setView([homeLatitude, homeLongitude], 16);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        const map = L.map('map', { zoomControl: false }).setView([homeLatitude, homeLongitude], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-        // กางวงกลมรัศมี 80 เมตรรอบหลังคาบ้านจริงของพี่ซัง
-        L.circle([homeLatitude, homeLongitude], {
-            color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 80
-        }).addTo(map);
-
-        // [จุดเพิ่มร้านค้าประจำ 🍔] 
-        const shops = [
-            { name: "จุดรับงาน Shopee 📦", lat: 12.6485, lon: 102.0955, icon: "🏪" },
-            { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6460, lon: 102.0935, icon: "🍔" }
-        ];
-
-        shops.forEach(shop => {
-            const shopIcon = L.divIcon({ html: `<div style="font-size:24px;">${shop.icon}</div>`, className: '' });
-            L.marker([shop.lat, shop.lon], { icon: shopIcon }).addTo(map)
-             .bindPopup(`<b>${shop.name}</b>`);
-        });
+        L.circle([homeLatitude, homeLongitude], { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 80 }).addTo(map);
 
         let riderMarker;
 
-        onSnapshot(doc(db, "locations", riderUUID), (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const pos = [data.latitude, data.longitude];
+        window.checkRiderLocation = async function() {
+            const btn = document.getElementById("btn-check");
+            btn.innerText = "กำลังสแกนเรดาร์... ⏳";
+            btn.disabled = true;
 
-                const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
+            try {
+                const docRef = doc(db, "locations", riderUUID);
+                const docSnap = await getDoc(docRef);
 
-                // เช็คเงื่อนไขถ้าระยะห่างจากหลังคาบ้านต่ำกว่าหรือเท่ากับ 80 เมตร สลับสถานะพักผ่อน
-                if (distance <= 80) {
-                    document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
-                    document.getElementById("rider-status").style.color = "#10b981";
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const pos = [data.latitude, data.longitude];
+                    const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
+
+                    if (distance <= 80) { //
+                        document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
+                        document.getElementById("rider-status").style.color = "#10b981";
+                    } else {
+                        document.getElementById("rider-status").innerText = data.status;
+                        document.getElementById("rider-status").style.color = "#e11d48";
+                    }
+
+                    const bikeIcon = L.divIcon({ 
+                        html: `<div style="font-size: 42px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));">${data.icon || '🏍️💨'}</div>`, 
+                        className: '', iconSize: [60, 60], iconAnchor: [30, 45]
+                    });
+                    
+                    if (!riderMarker) {
+                        riderMarker = L.marker(pos, { icon: bikeIcon }).addTo(map);
+                    } else {
+                        riderMarker.setLatLng(pos);
+                    }
+                    map.setView(pos, 18);
+
+                    // 🎯 [หมัดเด็ดซ้อนแผน] เจนรูปภาพแผนที่สตรีทช็อต ณ พิกัดปัจจุบันของพี่ยาง ยิงส่งกลับไปแอปทันที
+                    const mapShotUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-motorcycle+f43f5e(${data.longitude},${data.latitude})/${data.longitude},${data.latitude},16,0/400x400?access_token=pk.eyJ1IjoibWFwYm94YXBpIiwiYSI6ImNreDJnd3N4bTFrbTIydm10Z3B4OG9xa2EifQ==`;
+
+                    await addDoc(collection(db, "stats"), {
+                        device_id: riderUUID,
+                        checked_at: serverTimestamp(),
+                        display_time: new Date().toLocaleString('th-TH', { hour12: false }),
+                        map_image: mapShotUrl // ส่งลิงก์รูปพิกัดแนบไปในคลังสถิติ
+                    });
+
+                    btn.innerText = "อัปเดตตำแหน่งแล้ว  ✓";
                 } else {
-                    document.getElementById("rider-status").innerText = data.status;
-                    document.getElementById("rider-status").style.color = "#e11d48";
+                    document.getElementById("rider-status").innerText = "ไม่พบข้อมูลพิกัดในระบบคราบบบ";
                 }
-
-                const bikeIcon = L.divIcon({ html: data.icon || '🏍️💨', className: '', iconSize: [40, 40] });
-                
-                if (!riderMarker) {
-                    riderMarker = L.marker(pos, { icon: bikeIcon }).addTo(map);
-                } else {
-                    riderMarker.setLatLng(pos);
-                }
-                map.panTo(pos);
-            } else {
-                document.getElementById("rider-status").innerText = "พี่ซังยังไม่ได้เปิดแอปส่งพิกัดครับ";
+            } catch (error) {
+                console.error(error);
+                document.getElementById("rider-status").innerText = "สัญญาณขัดข้อง ลองใหม่อีกครั้ง";
             }
-        });
+
+            setTimeout(() => {
+                btn.innerText = "เช็คตำแหน่งพี่ยาง 🔍";
+                btn.disabled = false;
+            }, 3000);
+        }
     </script>
 </body>
 </html>
