@@ -8,9 +8,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { margin: 0; padding: 0; font-family: sans-serif; background: #f8fafc; }
-        #map { height: 100vh; width: 100%; }
+        #map { height: 100vh; width: 100%; position: absolute; top: 0; bottom: 0; z-index: 1; }
         .info-box {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: white; padding: 15px 25px; border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; text-align: center;
             width: 85%; max-width: 340px;
@@ -23,8 +23,9 @@
         }
         .check-btn:active { transform: scale(0.98); }
         
+        /* จัดตำแหน่งปุ่มซูมให้อยู่ฝั่งขวามือบน จะได้ไม่ทับกล่องข้อความ */
         .leaflet-top.leaflet-left {
-            left: auto; right: 10px; top: 10px;
+            left: auto !important; right: 15px !important; top: 15px !important;
         }
     </style>
 </head>
@@ -56,17 +57,19 @@
         const homeLatitude = 12.647361;  
         const homeLongitude = 102.094667; 
 
+        // 🎯 [แก้ไขจุดคำผิด] ล้างคำว่า const_cos ออกไปแล้ว ปรับสูตรคำนวณระยะทางสายคลีนเปิดรับทุกเบราว์เซอร์
         function getDistanceInMeters(lat1, lon1, lat2, lon2) {
             const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      const_cos = Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                       Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             return R * c;
         }
 
+        // โหลดฐานแผ่นที่ขึ้นหน้าจอ
         const map = L.map('map', { zoomControl: true }).setView([homeLatitude, homeLongitude], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
@@ -83,7 +86,7 @@
         });
 
         let riderMarker;
-        let unsubscribeLive = null; // ตัวแปรสำหรับเปิด-ปิดท่อเรียลไทม์
+        let unsubscribeLive = null; 
         let liveTimeout = null;
 
         function getDynamicIconSize(zoomLevel) {
@@ -96,19 +99,17 @@
         window.checkRiderLocation = async function() {
             const btn = document.getElementById("btn-check");
             
-            // ถ้าท่อเดิมเปิดอยู่ ให้เคลียร์ของเก่าก่อนรันรอบใหม่
             if (unsubscribeLive) {
                 unsubscribeLive();
                 clearTimeout(liveTimeout);
             }
 
             btn.innerText = "🔴 กำลังติดตามสดเรียลไทม์...";
-            btn.style.background = "linear-gradient(135deg, #10b981, #059669)"; // เปลี่ยนปุ่มเป็นสีเขียวบอกสถานะ Live
+            btn.style.background = "linear-gradient(135deg, #10b981, #059669)"; 
             btn.disabled = true;
 
             let isFirstLoad = true;
 
-            // 🎯 [หมัดเด็ดเปลี่ยนเกม] เปิดท่อสตรีมมิ่งเกาะติดหน้าจอสดเรียลไทม์ ขยับตามรถพี่ยางทันที!
             unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), async (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -127,21 +128,19 @@
                     const iconSize = getDynamicIconSize(currentZoom);
 
                     const bikeIcon = L.divIcon({ 
-                        html: `<div id="bike-icon-wrapper" style="font-size: ${iconSize}px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); transition: all 0.5s ease-out;">💡🏍️</div>`, 
+                        html: `<div id="bike-icon-wrapper" style="font-size: ${iconSize}px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); transition: all 0.5s ease-out;">🏍️</div>`, 
                         className: '', iconSize: [60, 60], iconAnchor: [30, 45]
                     });
                     
                     if (!riderMarker) {
                         riderMarker = L.marker(pos, { icon: bikeIcon }).addTo(map);
                     } else {
-                        riderMarker.setLatLng(pos); // 🌟 ย้ายพิกัดหมุดสดๆ กลางอากาศ รถขยับหมุดขยับตามทันที!
+                        riderMarker.setLatLng(pos); 
                         riderMarker.setIcon(bikeIcon);
                     }
                     
-                    // เลื่อนหน้าจอแผนที่ตามรถพี่ยางไปเรื่อยๆ
                     map.setView(pos, map.getZoom() < 16 ? 18 : map.getZoom());
 
-                    // บันทึกสถิติและเจนรูปภาพย่อเฉพาะ "จังหวะแรกที่แฟนกดปุ่ม" เท่านั้น (ไม่บันทึกซ้ำๆ ทุกๆ วินาทีให้รกคลัง)
                     if (isFirstLoad) {
                         const mapShotUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-motorcycle+f43f5e(${data.longitude},${data.latitude})/${data.longitude},${data.latitude},16,0/400x400?access_token=pk.eyJ1IjoibWFwYm94YXBpIiwiYSI6ImNreDJnd3N4bTFrbTIydm10Z3B4OG9xa2EifQ==`;
 
@@ -156,10 +155,10 @@
                 }
             });
 
-            // 🎯 หน่วงเวลาให้สตรีมมิ่งสด 5 นาที (300,000 มิลลิวินาที) จากนั้นจะคืนค่าปุ่มกดตามปกติ
+            // เปิดสตรีมเรียลไทม์ 5 นาทีค้างไว้ให้แฟนส่องยาวๆ ตามสั่ง
             liveTimeout = setTimeout(() => {
                 if (unsubscribeLive) {
-                    unsubscribeLive(); // สั่งปิดท่อเรียลไทม์
+                    unsubscribeLive(); 
                     unsubscribeLive = null;
                 }
                 btn.innerText = "เช็คตำแหน่งพี่ยาง 🔍";
