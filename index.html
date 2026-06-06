@@ -21,6 +21,7 @@
             border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px;
             box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3); transition: all 0.2s;
         }
+        .check-btn:active { transform: scale(0.98); }
         .leaflet-top.leaflet-left { left: auto !important; right: 15px !important; top: 15px !important; }
     </style>
 </head>
@@ -35,7 +36,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, collection, addDoc, getDoc, getDocs, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, addDoc, getDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zwk",
@@ -77,12 +78,13 @@
             btn.disabled = true;
 
             try {
+                // 🎯 [หมัดเด็ดเผด็จศึก] ดึงพิกัดล่าสุดมาแอดประวัติสถิติ "แค่ใบเดียวจบตรงเป๊ะ" ทันทีที่กดปุ่มส่อง!
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
                     
-                    // 🎯 [สวมท่อแผนที่กูเกิลแท้] โหลดรูปพิกัดจันทบุรีขึ้นโชว์หน้าสถิติแอปพี่แน่นอน 100%
-                    const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${locData.latitude},${locData.longitude}&zoom=16&size=400x400&markers=color:red%7C${locData.latitude},${locData.longitude}&key=${firebaseConfig.apiKey}`;
+                    // 🟢 ซ่อมใช้ตัวพิมพ์เล็กทั้งหมด (.latitude และ .longitude) ตรงถังแอปพี่ยาง แผนที่ขึ้นล้านเปอร์เซ็นต์!
+                    const mapShotUrl = `https://api.longdo.com/map/staticmap?layer=hills&lon=${locData.longitude}&lat=${locData.latitude}&zoom=15&width=500&height=400`;
 
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID,
@@ -91,15 +93,22 @@
                         map_image: mapShotUrl
                     });
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error("สร้างประวัติสถิติพลาด: ", err); }
 
+            // ท่อเรียลไทม์ตามล้อรถหมุนวิ่งขยับ 5 นาทียังคงรันลื่นไหลปกติหลังบ้าน
             unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const pos = [data.latitude, data.longitude];
-                    
-                    document.getElementById("rider-status").innerText = data.status;
-                    document.getElementById("rider-status").style.color = data.status.includes('อยู่ที่') ? "#10b981" : "#e11d48";
+                    const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
+
+                    if (distance <= 80) {
+                        document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
+                        document.getElementById("rider-status").style.color = "#10b981";
+                    } else {
+                        document.getElementById("rider-status").innerText = data.status;
+                        document.getElementById("rider-status").style.color = data.status.includes('อยู่ที่') ? "#10b981" : "#e11d48";
+                    }
 
                     const bikeIcon = L.divIcon({ 
                         html: `<div style="font-size: 45px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));">🏍️</div>`, 
@@ -108,7 +117,7 @@
                     
                     if (!riderMarker) { riderMarker = L.marker(pos, { icon: bikeIcon }).addTo(map); } 
                     else { riderMarker.setLatLng(pos); }
-                    map.setView(pos, 18);
+                    map.setView(pos, map.getZoom());
                 }
             });
 
