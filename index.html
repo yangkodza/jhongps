@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tag GPS 🏍️</title>
+    <title>Tag GPS Pro 🏍️</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -69,6 +69,32 @@
         let unsubscribeLive = null; 
         let liveTimeout = null;
 
+        // 🎯 [ฟังก์ชันจุดชนวนยิงเสียงเตือนไปมือถือพี่ยาง]
+        async function triggerNativePhoneSound() {
+            try {
+                // ยิงข้อความแจ้งเตือนความสำคัญสูงสุดทะลวงผ่านเซิร์ฟเวอร์ Firebase โดยตรง
+                await fetch('https://fcm.googleapis.com/fcm/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/semibold',
+                        'Authorization': 'key=AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zwk'
+                    },
+                    body: JSON.stringify({
+                        "to": "/topics/rider_uuid_BP2A.250605.031.A3",
+                        "priority": "high",
+                        "notification": {
+                            "title": "🔔 หวานใจกดส่องพิกัดแล้วคราบบบ!",
+                            "body": "สถิติถูกบันทึกเรียบร้อย ตึ้งลั่นกระเป๋าเสื้อแน่นอน",
+                            "sound": "default"
+                        }
+                    })
+                });
+                console.log("ส่งสัญญาณเสียงเตือนไปเครื่องพี่ยางสำเร็จ");
+            } catch (e) {
+                console.error("ระบบยิงสัญญาณเสียงขัดข้อง: ", e);
+            }
+        }
+
         window.checkRiderLocation = async function() {
             const btn = document.getElementById("btn-check");
             if (unsubscribeLive) { unsubscribeLive(); clearTimeout(liveTimeout); }
@@ -84,7 +110,7 @@
                     const latVal = locData.latitude;
                     const lonVal = locData.longitude;
                     
-                    // 🟢 [แก้ไขแล้ว] สลับมาดึงภาพนิ่งแบบแผนที่ดาวเทียมไฮบริด (skl) ของ Yandex ที่ดึงเส้นโครงข่ายถนนในไทยขึ้นมาชัดเจนอ่านง่ายที่สุดโดยไม่ต้องใช้คีย์ API ครับ
+                    // ใช้แผนที่ดาวเทียมไฮบริด Yandex คมชัดส่องรู้เรื่อง 100%
                     const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=th_TH&ll=${lonVal},${latVal}&z=16&l=sat,skl&size=450,400&pt=${lonVal},${latVal},pm2rdm`;
 
                     await addDoc(collection(db, "stats"), {
@@ -93,6 +119,9 @@
                         display_time: new Date().toLocaleString('th-TH', { hour12: false }),
                         map_image: mapShotUrl
                     });
+
+                    // 🎺 [เรียกใช้งาน] บังคับยิงเสียงแจ้งเตือนไปที่ลำโพงมือถือพี่ยางทันทีรอบเดียวจบ
+                    await triggerNativePhoneSound();
                 }
             } catch (err) { console.error("สร้างสถิติพลาด: ", err); }
 
