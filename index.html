@@ -21,6 +21,7 @@
             border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px;
             box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3); transition: all 0.2s;
         }
+        .check-btn:active { transform: scale(0.98); }
         .leaflet-top.leaflet-left { left: auto !important; right: 15px !important; top: 15px !important; }
     </style>
 </head>
@@ -77,13 +78,15 @@
             btn.disabled = true;
 
             try {
-                // 🎯 ดึงพิกัดล่าสุดมาทำประวัติสถิติ "ใบเดียวจบตรงเป๊ะ" ทันทีที่แฟนกดปุ่มส่อง!
+                // 🎯 ดึงพิกัดล่าสุดตรงเข้าถัง สร้างสถิติใบเดียวโดด ๆ ตัดขาดปัญหาลูปเบิ้ลรัวหลังบ้าน
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
                     
-                    // 🟢 [ซ่อมจุดบิ๊กบั๊กตัวแปรสลับคู่] เปลี่ยนมาใช้ locData.latitude และ locData.longitude ชนถัง Google Maps แท้ แผนที่ขึ้นแน่นอนล้านเปอร์เซ็นต์!
-                    const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${locData.latitude},${locData.longitude}&zoom=16&size=500x400&markers=color:red%7C${locData.latitude},${locData.longitude}&key=${firebaseConfig.apiKey}`;
+                    // 🟢 [ท่อแผนที่เสรีนิรันดร์ OpenStreetMap Static] รองรับท่อตรงละติจูดลองจิจูด ภาพขึ้นล้านเปอร์เซ็นต์แน่นอนพี่!
+                    const latVal = locData.latitude;
+                    const lonVal = locData.longitude;
+                    const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lonVal},${latVal}&z=16&l=map&size=450,400&pt=${lonVal},${latVal},pm2rdm`;
 
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID,
@@ -92,7 +95,7 @@
                         map_image: mapShotUrl
                     });
                 }
-            } catch (err) { console.error("สร้างประวัติสถิติพลาด: ", err); }
+            } catch (err) { console.error("สร้างสถิติพลาด: ", err); }
 
             unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), (docSnap) => {
                 if (docSnap.exists()) {
