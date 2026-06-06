@@ -21,7 +21,6 @@
             border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px;
             box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3); transition: all 0.2s;
         }
-        .check-btn:active { transform: scale(0.98); }
         .leaflet-top.leaflet-left { left: auto !important; right: 15px !important; top: 15px !important; }
     </style>
 </head>
@@ -78,12 +77,10 @@
             btn.disabled = true;
 
             try {
-                // 🎯 [หมัดเด็ดเผด็จศึก] ดึงพิกัดล่าสุดมาแอดประวัติสถิติ "แค่ใบเดียวจบตรงเป๊ะ" ทันทีที่กดปุ่มส่อง!
+                // 🎯 ดึงพิกัดตัวพิมพ์เล็ก (.latitude และ .longitude) ตรงเป๊ะเข้าลิงก์แผนที่เสถียรสูงสุด
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
-                    
-                    // 🟢 ซ่อมใช้ตัวพิมพ์เล็กทั้งหมด (.latitude และ .longitude) ตรงถังแอปพี่ยาง แผนที่ขึ้นล้านเปอร์เซ็นต์!
                     const mapShotUrl = `https://api.longdo.com/map/staticmap?layer=hills&lon=${locData.longitude}&lat=${locData.latitude}&zoom=15&width=500&height=400`;
 
                     await addDoc(collection(db, "stats"), {
@@ -95,7 +92,6 @@
                 }
             } catch (err) { console.error("สร้างประวัติสถิติพลาด: ", err); }
 
-            // ท่อเรียลไทม์ตามล้อรถหมุนวิ่งขยับ 5 นาทียังคงรันลื่นไหลปกติหลังบ้าน
             unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
