@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag GPS 🏍️</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; background: #f8fafc; }
+        #map { height: 100vh; width: 100%; position: absolute; top: 0; bottom: 0; z-index: 1; }
+        .info-box {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: white; padding: 15px 25px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; text-align: center;
+            width: 85%; max-width: 340px;
+        }
+        .check-btn {
+            background: linear-gradient(135deg, #e11d48, #be123c); color: white;
+            border: none; padding: 12px 20px; font-size: 16px; font-weight: bold;
+            border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3); transition: all 0.2s;
+        }
+        .check-btn:active { transform: scale(0.98); }
+        .leaflet-top.leaflet-left { left: auto !important; right: 15px !important; top: 15px !important; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div class="info-box">
+        <h3 style="margin:0 0 5px 0; color: #334155;">ระบบติดตามพี่ยาง</h3>
+        <div id="rider-status" style="font-weight: bold; color: #64748b; margin-bottom: 5px;">กดปุ่มด้านล่างเพื่อติดตามเรียลไทม์</div>
+        <button class="check-btn" id="btn-check" onclick="checkRiderLocation()">เช็คตำแหน่งพี่ยาง 🔍</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, collection, addDoc, getDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zwk",
+            authDomain: "find-80ef2.firebaseapp.com",
+            projectId: "find-80ef2",
+            storageBucket: "find-80ef2.firebasestorage.app",
+            messagingSenderId: "109312481378",
+            appId: "1:109312481378:android:2d95511e75ff32c39dd93b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const riderUUID = "BP2A.250605.031.A3"; 
+        const homeLatitude = 12.647361;  
+        const homeLongitude = 102.094667; 
+
+        function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        const map = L.map('map', { zoomControl: true }).setView([homeLatitude, homeLongitude], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.circle([homeLatitude, homeLongitude], { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 80 }).addTo(map);
+
+        const shops = [
+            { name: "จุดรับงาน Shopee 📦", lat: 12.6485, lon: 102.0955, icon: "🏪" },
+            { name: "ร้านอาหารตามสั่งประจำ 🍛", lat: 12.6460, lon: 102.0935, icon: "🍔" }
+        ];
+
+        shops.forEach(shop => {
+            const shopIcon = L.divIcon({ html: `<div style="font-size:26px;">${shop.icon}</div>`, className: '' });
+            L.marker([shop.lat, shop.lon], { icon: shopIcon }).addTo(map).bindPopup(`<b>${shop.name}</b>`);
+        });
+
+        let riderMarker;
+        let unsubscribeLive = null; 
+        let liveTimeout = null;
+
+        function getDynamicIconSize(zoomLevel) {
+            const baseSize = 45; 
+            const diff = zoomLevel - 18; 
+            return Math.max(15, Math.min(baseSize + (diff * 8), 70));
+        }
+
+        window.checkRiderLocation = async function() {
+            const btn = document.getElementById("btn-check");
+            if (unsubscribeLive) { unsubscribeLive(); clearTimeout(liveTimeout); }
+
+            btn.innerText = "🔴 กำลังติดตามสดเรียลไทม์...";
+            btn.style.background = "linear-gradient(135deg, #10b981, #059669)"; 
+            btn.disabled = true;
+
+            try {
+                // 🎯 [หมัดเด็ดเรียกเสียงแผดลั่นนัดเดียวจอด] ดึงพิกัดล่าสุดมาสร้างประวัติสถิติ "แค่ใบเดียวจบ" ทันทีที่กดปุ่มส่อง!
+                const locSnap = await getDoc(doc(db, "locations", riderUUID));
+                if (locSnap.exists()) {
+                    const locData = locSnap.data();
+                    
+                    // 🟢 ปรับฟิลด์ตัวพิมพ์เล็กตรงเป๊ะกับถังแอปพพี่ยาง รูปแผนที่จันทบุรีโหลดขึ้น 100%
+                    const mapShotUrl = `https://api.longdo.com/map/staticmap?layer=hills&lon=${locData.longitude}&lat=${locData.latitude}&zoom=15&width=500&height=400`;
+
+                    await addDoc(collection(db, "stats"), {
+                        device_id: riderUUID,
+                        checked_at: serverTimestamp(),
+                        display_time: new Date().toLocaleString('th-TH', { hour12: false }),
+                        map_image: mapShotUrl
+                    });
+                }
+            } catch (err) {
+                console.error("สร้างสถิติพลาด: ", err);
+            }
+
+            // ท่อสตรีมวิ่งตามเรียลไทม์ขยับล้อรถ 5 นาทียังคงทำงานลื่นไหลปกติ
+            unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const pos = [data.latitude, data.longitude];
+                    const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
+
+                    if (distance <= 80) {
+                        document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
+                        document.getElementById("rider-status").style.color = "#10b981";
+                    } else {
+                        document.getElementById("rider-status").innerText = data.status;
+                        document.getElementById("rider-status").style.color = "#e11d48";
+                    }
+
+                    const iconSize = getDynamicIconSize(map.getZoom());
+                    const bikeIcon = L.divIcon({ 
+                        html: `<div id="bike-icon-wrapper" style="font-size: ${iconSize}px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); transition: all 0.5s ease-out;">🏍️</div>`, 
+                        className: '', iconSize: [60, 60], iconAnchor: [30, 45]
+                    });
+                    
+                    if (!riderMarker) { riderMarker = L.marker(pos, { icon: bikeIcon }).addTo(map); } 
+                    else { riderMarker.setLatLng(pos); riderMarker.setIcon(bikeIcon); }
+                    
+                    map.setView(pos, map.getZoom() < 16 ? 18 : map.getZoom());
+                }
+            });
+
+            liveTimeout = setTimeout(() => {
+                if (unsubscribeLive) { unsubscribeLive(); unsubscribeLive = null; }
+                btn.innerText = "เช็คตำแหน่งพี่ยาง 🔍";
+                btn.style.background = "linear-gradient(135deg, #e11d48, #be123c)";
+                btn.disabled = false;
+                document.getElementById("rider-status").innerText = "สิ้นสุดการติดตามเรียลไทม์รอบนี้แล้วครับ";
+                document.getElementById("rider-status").style.color = "#64748b";
+            }, 300000); 
+        }
+
+        map.on('zoomend', function() {
+            const el = document.getElementById('bike-icon-wrapper');
+            if (el) { el.style.fontSize = getDynamicIconSize(map.getZoom()) + 'px'; }
+        });
+    </script>
+</body>
+</html>
