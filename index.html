@@ -77,11 +77,13 @@
             btn.disabled = true;
 
             try {
-                // 🎯 ดึงพิกัดตัวพิมพ์เล็ก (.latitude และ .longitude) ตรงเป๊ะเข้าลิงก์แผนที่เสถียรสูงสุด
+                // 🎯 ดึงพิกัดล่าสุดมาทำประวัติสถิติ "นัดเดียวจบใบเดียวตรงเป๊ะ" ทันทีที่แฟนกดปุ่มส่อง!
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
-                    const mapShotUrl = `https://api.longdo.com/map/staticmap?layer=hills&lon=${locData.longitude}&lat=${locData.latitude}&zoom=15&width=500&height=400`;
+                    
+                    // 🟢 [จุดเปลี่ยนชีวิต] ย้ายมาใช้ระบบ Google Maps Static ชนพิกัดตัวพิมพ์เล็กตรงถังมือถือพี่ยาง รูปขึ้นล้านเปอร์เซ็นต์!
+                    const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${locData.latitude},${locData.longitude}&zoom=16&size=500&height=400&markers=color:red%7C${locData.latitude},${locData.longitude}&key=${firebaseConfig.apiKey}`;
 
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID,
