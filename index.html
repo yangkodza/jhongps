@@ -77,13 +77,13 @@
             btn.disabled = true;
 
             try {
-                // 🎯 ดึงพิกัดล่าสุดมาทำประวัติสถิติ "นัดเดียวจบใบเดียวตรงเป๊ะ" ทันทีที่แฟนกดปุ่มส่อง!
+                // 🎯 ดึงพิกัดล่าสุดมาแอดประวัติสถิติ "ใบเดียวจบตรงเป๊ะ" ทันทีที่แฟนกดปุ่มส่อง!
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
                     
-                    // 🟢 [จุดเปลี่ยนชีวิต] ย้ายมาใช้ระบบ Google Maps Static ชนพิกัดตัวพิมพ์เล็กตรงถังมือถือพี่ยาง รูปขึ้นล้านเปอร์เซ็นต์!
-                    const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${loclatitude},${loclongitude}&zoom=16&size=500&height=400&markers=color:red%7C${loclatitude},${loclongitude}&key=${firebaseConfig.apiKey}`;
+                    // 🟢 [สวมท่อระบบกูเกิลแมพแท้] ชนฟิลด์ตัวพิมพ์เล็กตรงถังแอปพี่ยาง แผนที่ขึ้นพรึ่บพรั่งล้านเปอร์เซ็นต์!
+                    const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${locData.latitude},${locData.longitude}&zoom=16&size=500x400&markers=color:red%7C${locData.latitude},${locData.longitude}&key=${firebaseConfig.apiKey}`;
 
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID,
@@ -97,8 +97,8 @@
             unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    const pos = [latitude, longitude];
-                    const distance = getDistanceInMeters(latitude, longitude, homeLatitude, homeLongitude);
+                    const pos = [data.latitude, data.longitude];
+                    const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
 
                     if (distance <= 80) {
                         document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
