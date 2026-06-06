@@ -84,8 +84,8 @@
                     const latVal = locData.latitude;
                     const lonVal = locData.longitude;
                     
-                    // 🟢 [แก้ไขแล้ว] เปลี่ยนมาดึง Static Map ผ่าน API ของ Google Maps โดยใช้แผนที่ Hybrid (เห็นถนน+ซอยในไทยชัดเจนมากครับพี่)
-                    const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${latVal},${lonVal}&zoom=16&size=450x400&maptype=hybrid&markers=color:red%7C${latVal},${lonVal}&key=${firebaseConfig.apiKey}`;
+                    // 🟢 [แก้ไขแล้ว] สลับมาดึงภาพนิ่งแบบแผนที่ดาวเทียมไฮบริด (skl) ของ Yandex ที่ดึงเส้นโครงข่ายถนนในไทยขึ้นมาชัดเจนอ่านง่ายที่สุดโดยไม่ต้องใช้คีย์ API ครับ
+                    const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=th_TH&ll=${lonVal},${latVal}&z=16&l=sat,skl&size=450,400&pt=${lonVal},${latVal},pm2rdm`;
 
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID,
