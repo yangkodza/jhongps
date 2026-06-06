@@ -77,12 +77,12 @@
             btn.disabled = true;
 
             try {
-                // 🎯 ดึงพิกัดล่าสุดมาแอดประวัติสถิติ "ใบเดียวจบตรงเป๊ะ" ทันทีที่แฟนกดปุ่มส่อง!
+                // 🎯 ดึงพิกัดล่าสุดมาทำประวัติสถิติ "ใบเดียวจบตรงเป๊ะ" ทันทีที่แฟนกดปุ่มส่อง!
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
                     
-                    // 🟢 [สวมท่อระบบกูเกิลแมพแท้] ชนฟิลด์ตัวพิมพ์เล็กตรงถังแอปพี่ยาง แผนที่ขึ้นพรึ่บพรั่งล้านเปอร์เซ็นต์!
+                    // 🟢 [ซ่อมจุดบิ๊กบั๊กตัวแปรสลับคู่] เปลี่ยนมาใช้ locData.latitude และ locData.longitude ชนถัง Google Maps แท้ แผนที่ขึ้นแน่นอนล้านเปอร์เซ็นต์!
                     const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${locData.latitude},${locData.longitude}&zoom=16&size=500x400&markers=color:red%7C${locData.latitude},${locData.longitude}&key=${firebaseConfig.apiKey}`;
 
                     await addDoc(collection(db, "stats"), {
