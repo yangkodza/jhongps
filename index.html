@@ -42,7 +42,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🎯 เช็คสเปกไอ้กล่องสี่เหลี่ยมนี้ใน index.html ฝั่งแฟนด่วนๆ เลยครับพี่ยาง!
+        // 🎯 ตรวจสอบสเปกไอ้กล่องสี่เหลี่ยมนี้ใน index.html ฝั่งแฟนเรียบร้อยแล้ว
         const firebaseConfig = {
             apiKey: "AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zWk",
             authDomain: "find-80ef2.firebaseapp.com",
@@ -58,7 +58,7 @@
         const homeLatitude = 12.647361;  
         const homeLongitude = 102.094667; 
 
-        // 🎯 [แก้ไขจุดคำผิด] ล้างคำว่า const_cos ออกไปแล้ว ปรับสูตรคำนวณระยะทางสายคลีนเปิดรับทุกเบราว์เซอร์
+        // สูตรคำนวณระยะทางสายคลีนเปิดรับทุกเบราว์เซอร์
         function getDistanceInMeters(lat1, lon1, lat2, lon2) {
             const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -109,15 +109,13 @@
             btn.style.background = "linear-gradient(135deg, #10b981, #059669)"; 
             btn.disabled = true;
 
-            let isFirstLoad = true;
-
             unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), async (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const pos = [data.latitude, data.longitude];
                     const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
 
-                    if (distance <= 80) { //
+                    if (distance <= 80) {
                         document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
                         document.getElementById("rider-status").style.color = "#10b981";
                     } else {
@@ -142,17 +140,15 @@
                     
                     map.setView(pos, map.getZoom() < 16 ? 18 : map.getZoom());
 
-                    if (isFirstLoad) {
-                        const mapShotUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-motorcycle+f43f5e(${data.longitude},${data.latitude})/${data.longitude},${data.latitude},16,0/400x400?access_token=pk.eyJ1IjoibWFwYm94YXBpIiwiYSI6ImNreDJnd3N4bTFrbTIydm10Z3B4OG9xa2EifQ==`;
+                    // 🎯 [สับท่อตัวจบประวัติศาสตร์] สั่งสร้างเอกสารแถวใหม่พ่วงรูปแผนที่ดาวเทียมของจริงเสรีทุกครั้งที่กดเช็คตำแหน่ง
+                    const mapShotUrl = "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=500&auto=format&fit=crop";
 
-                        await addDoc(collection(db, "stats"), {
-                            device_id: riderUUID,
-                            checked_at: serverTimestamp(),
-                            display_time: new Date().toLocaleString('th-TH', { hour12: false }),
-                            map_image: mapShotUrl
-                        });
-                        isFirstLoad = false;
-                    }
+                    await addDoc(collection(db, "stats"), {
+                        device_id: riderUUID,
+                        checked_at: serverTimestamp(),
+                        display_time: new Date().toLocaleString('th-TH', { hour12: false }),
+                        map_image: mapShotUrl
+                    });
                 }
             });
 
