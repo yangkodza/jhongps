@@ -78,15 +78,14 @@
             btn.disabled = true;
 
             try {
-                // 🎯 ดึงพิกัดล่าสุดตรงเข้าถัง สร้างสถิติใบเดียวโดด ๆ ตัดขาดปัญหาลูปเบิ้ลรัวหลังบ้าน
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
-                    
-                    // 🟢 [ท่อแผนที่เสรีนิรันดร์ OpenStreetMap Static] รองรับท่อตรงละติจูดลองจิจูด ภาพขึ้นล้านเปอร์เซ็นต์แน่นอนพี่!
                     const latVal = locData.latitude;
                     const lonVal = locData.longitude;
-                    const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lonVal},${latVal}&z=16&l=map&size=450,400&pt=${lonVal},${latVal},pm2rdm`;
+                    
+                    // 🟢 [แก้ไขแล้ว] เปลี่ยนมาดึง Static Map ผ่าน API ของ Google Maps โดยใช้แผนที่ Hybrid (เห็นถนน+ซอยในไทยชัดเจนมากครับพี่)
+                    const mapShotUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${latVal},${lonVal}&zoom=16&size=450x400&maptype=hybrid&markers=color:red%7C${latVal},${lonVal}&key=${firebaseConfig.apiKey}`;
 
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID,
