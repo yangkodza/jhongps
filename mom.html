@@ -104,17 +104,17 @@
     <div class="custom-zoom-controls">
         <button class="zoom-btn" onclick="window.map.zoomIn()">＋</button>
         <button class="zoom-btn" onclick="window.map.zoomOut()">－</button>
-        <button class="zoom-btn" onclick="window.reCenterMapToRider()" title="จัดศูนย์กลางไปตำแหน่งแม่">🎯</button>
+        <button class="zoom-btn" onclick="window.reCenterMapToRider()" title="จัดศูนย์กลางไปตำแหน่งพี่ยาง">🎯</button>
     </div>
     
     <!-- 📍 แผงแดชบอร์ดล่างชิ้นเดียว ธีมสีขาวนมนุ่มฟูสไตล์พาสเทล -->
     <div class="bottom-hud-container">
         <div class="unified-dashboard">
             <!-- สถานะปักหมุดรัศมีและที่บ้าน -->
-            <div class="hud-status-text" id="rider-status">กำลังค้นหาสัญญาณแม่...</div>
+            <div class="hud-status-text" id="rider-status">กำลังค้นหาสัญญาณพี่ยาง...</div>
             
             <!-- ปุ่มนำทางสีฟ้าพาสเทลหวานๆ -->
-            <a href="#" target="_blank" class="navigate-btn" id="btn-navigate">🧭 ตามไปหาแม่</a>
+            <a href="#" target="_blank" class="navigate-btn" id="btn-navigate">🧭 ตามไปหาพี่ยาง</a>
         </div>
     </div>
 
@@ -133,9 +133,9 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const riderUUID = "GET_MOM_UUID"; 
-        const homeLatitude = 12.377489;  
-        const homeLongitude = 102.381765; 
+        const riderUUID = "BP2A.250605.031.A3"; 
+        const homeLatitude = 12.647361;  
+        const homeLongitude = 102.094667; 
 
         window.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([homeLatitude, homeLongitude], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window.map);
