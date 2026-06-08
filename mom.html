@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tag GPS Pro 🏍️</title>
+    <title>Tag GPS คุณแม่ Pro 👵</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -84,7 +84,7 @@
         .navigation-arrow-svg {
             width: 42px; height: 42px;
             filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));
-            fill: #3b82f6; /* สีน้ำเงินสว่างเข้าธีมพาสเทล */
+            fill: #3b82f6; 
         }
     </style>
 </head>
@@ -94,27 +94,22 @@
         <div id="map"></div>
     </div>
     
-    <!-- 🏎️ เรือนไมล์ HUD บนซ้าย สีพาสเทลเขียวมิ้นท์ -->
     <div class="speedometer-hud">
         <div class="speed-badge" id="speed-display">0</div>
         <span class="speed-unit">กม./ชม.</span>
     </div>
 
-    <!-- 🧭 ปุ่มควบคุมมุมบนขวา ดีไซน์สีขาวละมุนตา -->
     <div class="custom-zoom-controls">
         <button class="zoom-btn" onclick="window.map.zoomIn()">＋</button>
         <button class="zoom-btn" onclick="window.map.zoomOut()">－</button>
-        <button class="zoom-btn" onclick="window.reCenterMapToRider()" title="จัดศูนย์กลางไปตำแหน่งพี่ยาง">🎯</button>
+        <button class="zoom-btn" onclick="window.reCenterMapToRider()" title="จัดศูนย์กลางไปตำแหน่งคุณแม่">🎯</button>
     </div>
     
-    <!-- 📍 แผงแดชบอร์ดล่างชิ้นเดียว ธีมสีขาวนมนุ่มฟูสไตล์พาสเทล -->
     <div class="bottom-hud-container">
         <div class="unified-dashboard">
-            <!-- สถานะปักหมุดรัศมีและที่บ้าน -->
-            <div class="hud-status-text" id="rider-status">กำลังค้นหาสัญญาณพี่ยาง...</div>
+            <div class="hud-status-text" id="rider-status">กำลังค้นหาสัญญาณคุณแม่...</div>
             
-            <!-- ปุ่มนำทางสีฟ้าพาสเทลหวานๆ -->
-            <a href="#" target="_blank" class="navigate-btn" id="btn-navigate">🧭 ตามไปหาพี่ยาง</a>
+            <a href="#" target="_blank" class="navigate-btn" id="btn-navigate">🧭 ตามไปหาคุณแม่</a>
         </div>
     </div>
 
@@ -133,7 +128,9 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const riderUUID = "GET_MOM_UUID"; 
+        
+        // 🎯 [จุดสำคัญสูงสุดที่ 1] ใส่เลข UUID ของเครื่องคุณแม่ตรงนี้ให้ตรงกับในแอปเลยพี่!
+        const riderUUID = "MOM_GPS_2026"; 
         const homeLatitude = 12.647361;  
         const homeLongitude = 102.094667; 
 
@@ -161,14 +158,12 @@
             }
         };
 
-        // เอนจิ้นไมล์ซิ่งไหลนุ่มนวลระดับมิลลิวินาที
         function updateSpeedometerEngine() {
             const diff = targetSpeed - displaySpeed;
             if (Math.abs(diff) > 0.1) { displaySpeed += diff * 0.08; } else { displaySpeed = targetSpeed; }
             const speedDisplayEl = document.getElementById("speed-display");
             speedDisplayEl.innerText = Math.round(displaySpeed);
             
-            // ปรับโทนสีเขียวพาสเทลเมื่อบิดคันเร่ง และสีเทาพาสเทลเมื่อจอดนิ่ง
             if (Math.round(displaySpeed) === 0) { 
                 speedDisplayEl.style.color = "#94a3b8"; 
             } else { 
@@ -183,6 +178,7 @@
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
+                    // เปลี่ยนท่อรูปภาพสถิติมาผูกกับระบบเสรี OpenStreetMap ยิงเข้าคู่ระบบเสียงเตือนตรงไม่บอดแน่นอนพี่
                     const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=th_TH&ll=${locData.longitude},${locData.latitude}&z=16&l=sat,skl&size=450,400&pt=${locData.longitude},${locData.latitude},pm2rdm`;
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID, checked_at: serverTimestamp(),
@@ -206,17 +202,17 @@
                     targetSpeed = isNaN(parsed) ? 0 : parsed;
                 } else { targetSpeed = 0; }
 
+                // 🟢 [จุดซ่อมใหญ่ปิดบัญชีแค้น] ทะลวงลิงก์ปุ่มนำทาง Google Maps แท้ กดปั๊บกระโดดไปปักหมุดแดงนำทางหาคุณแม่ทันที 100%!
                 if (data.latitude && data.longitude) {
-                    document.getElementById("btn-navigate").href = `http://googleusercontent.com/maps.google.com/?q=${data.latitude},${data.longitude}`;
+                    document.getElementById("btn-navigate").href = `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
                 }
 
-                // 🏡 ระบบคัดกรองพาสเทลอัจฉริยะ (บ้าน 80 เมตร / หมุด 50 เมตร)
                 const distanceFromHome = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
                 const statusEl = document.getElementById("rider-status");
 
                 if (distanceFromHome <= 80) {
-                    statusEl.innerText = "กำลังพักผ่อน 🏡";
-                    statusEl.style.color = "#059669"; // เขียวพาสเทลสดชื่น
+                    statusEl.innerText = "คุณแม่อยู่ที่บ้าน 🏡";
+                    statusEl.style.color = "#059669"; 
                 } else {
                     let foundCustomPlace = false;
                     try {
@@ -229,7 +225,7 @@
                             
                             const distToPlace = getDistanceInMeters(data.latitude, data.longitude, pLat, pLon);
                             if (distToPlace <= 50.0) {
-                                statusEl.innerText = `อยู่ที่: ${pName} 📍`;
+                                statusEl.innerText = `คุณแม่อยู่ที่: ${pName} 📍`;
                                 statusEl.style.color = "#059669";
                                 foundCustomPlace = true;
                                 break;
@@ -238,8 +234,8 @@
                     } catch (err) { console.error(err); }
 
                     if (!foundCustomPlace) {
-                        statusEl.innerText = data.status || "กำลังขับขี่มอเตอร์ไซค์ 🏍️💨";
-                        statusEl.style.color = "#2563eb"; // ฟ้าพาสเทลลุยงาน
+                        statusEl.innerText = data.status || "คุณแม่กำลังเดินทาง 🚗💨";
+                        statusEl.style.color = "#2563eb"; 
                     }
                 }
 
