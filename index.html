@@ -33,63 +33,49 @@
         }
         .speed-unit { font-size: 11px; color: #94a3b8; display: block; margin-top: 4px; font-weight: bold; text-shadow: none; }
 
-        /* 🧭 แผงปุ่มควบคุมมุมบนขวามือ (ซูมเข้า, ซูมออก, และปุ่มปรับศูนย์กลาง) */
+        /* 🧭 แผงปุ่มควบคุมมุมบนขวามือ (ซูมเข้า, ซูมออก, ปรับศูนย์กลาง ดีไซน์เข้าพวก 100%) */
         .custom-zoom-controls {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             display: flex; flex-direction: column; gap: 6px;
         }
         .zoom-btn {
             width: 44px; height: 44px; background: white; border: none;
-            border-radius: 12px; font-size: 22px; font-weight: bold; color: #1e293b;
+            border-radius: 12px; font-size: 20px; font-weight: bold; color: #1e293b;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
         .zoom-btn:active { background: #f1f5f9; transform: scale(0.95); }
-        
-        /* ปุ่มล็อกศูนย์กลางเป้าเล็งสีน้ำจัดเต็มหลบใต้ปุ่มซูม */
-        .center-btn { background: #2563eb; color: white; font-size: 20px; }
-        .center-btn:active { background: #1d4ed8; }
 
-        /* 🔍 ปุ่มเรดาร์ยิงเสียงเรียกพี่ยาง ขวาล่างเหนือแผงสถานะ */
-        .check-radar-float {
-            position: absolute; bottom: 155px; right: 20px; z-index: 1000;
-        }
-        .radar-btn {
-            background: linear-gradient(135deg, #e11d48, #be123c); color: white;
-            border: none; width: 52px; height: 52px; border-radius: 50%; font-size: 20px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 16px rgba(225, 29, 72, 0.45); transition: all 0.2s;
-        }
-        .radar-btn:active { transform: scale(0.92); }
-
-        /* 📍 [ปรับปรุงโครงสร้างใหม่] แผงข้อมูล HUD ด้านล่าง จัดกึ่งกลางหน้าจอแท้ 100% ไม่เบี้ยวขวา */
+        /* 📍 [ปฏิวัติ Interface ใหม่] ยุบรวมแถบข้อมูลด้านล่างให้เป็นหน้าปัดเดียวกัน สมมาตรกึ่งกลางเป๊ะ ไม่เบี้ยวขวา */
         .bottom-hud-container {
-            position: absolute; bottom: 25px; left: 0; right: 0; z-index: 1000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 8px; width: 100%; pointer-events: none; /* เพื่อไม่ให้บล็อกการกดแผนที่รอบๆ */
+            position: absolute; bottom: 30px; left: 0; right: 0; z-index: 1000;
+            display: flex; justify-content: center; width: 100%; pointer-events: none;
         }
         
-        /* กล่องแสดงแถบสถานะ อยู่ที่/หมุดปัก คืนชีพกลับมาตามสั่ง */
-        .status-hud-bar {
-            background: rgba(255, 255, 255, 0.95); padding: 8px 16px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-weight: bold; font-size: 14px;
-            color: #64748b; text-align: center; width: 80%; max-width: 320px;
-            backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.6);
-            pointer-events: auto;
+        /* กล่องคอนโซลหลักชิ้นเดียวไร้รอยต่อ ธีมสากลพรีเมียมโปร่งแสงดาร์กสไตล์ */
+        .unified-dashboard {
+            background: rgba(15, 23, 42, 0.9); padding: 18px; border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4); width: 85%; max-width: 340px;
+            backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; flex-direction: column; gap: 12px; text-align: center;
+            box-sizing: border-box; pointer-events: auto;
+        }
+        
+        /* ส่วนข้อความแสดงสถานะหมุดภายในกล่องคอนโซล */
+        .hud-status-text {
+            font-weight: 700; font-size: 15px; color: #f8fafc; margin: 0;
+            letter-spacing: 0.5px;
         }
 
-        /* ปุ่มนำทางสีน้ำเงินขนาดใหญ่ แก้ไขโครงสร้างไม่เบี้ยวไปทางขวา */
-        .navigate-btn-wrapper {
-            width: 85%; max-width: 340px; pointer-events: auto;
-        }
+        /* ปุ่มนำทางสีน้ำเงินดีไซน์ฝังตัวร่วมแผงสวยงาม */
         .navigate-btn {
             background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
-            border: none; padding: 14px 20px; font-size: 16px; font-weight: bold;
-            border-radius: 16px; cursor: pointer; width: 100%; box-sizing: border-box;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4); 
+            border: none; padding: 12px 20px; font-size: 16px; font-weight: bold;
+            border-radius: 14px; cursor: pointer; width: 100%; box-sizing: border-box;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); 
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            text-decoration: none; transition: transform 0.2s;
+            text-decoration: none; transition: background 0.2s, transform 0.1s;
         }
         .navigate-btn:active { transform: scale(0.98); }
 
@@ -116,17 +102,13 @@
     <div class="custom-zoom-controls">
         <button class="zoom-btn" onclick="window.map.zoomIn()">＋</button>
         <button class="zoom-btn" onclick="window.map.zoomOut()">－</button>
-        <button class="zoom-btn center-btn" onclick="window.reCenterMapToRider()" title="จัดศูนย์กลางไปตำแหน่งพี่ยาง">🎯</button>
-    </div>
-
-    <div class="check-radar-float">
-        <button class="radar-btn" id="btn-check" onclick="checkRiderLocation()">🔍</button>
+        <button class="zoom-btn" onclick="window.reCenterMapToRider()" title="จัดศูนย์กลางไปตำแหน่งพี่ยาง">🎯</button>
     </div>
     
     <div class="bottom-hud-container">
-        <div class="status-hud-bar" id="rider-status">ระบบดักฟังพิกัดพร้อมใช้งาน</div>
-        
-        <div class="navigate-btn-wrapper">
+        <div class="unified-dashboard">
+            <div class="hud-status-text" id="rider-status">กำลังเชื่อมต่อสัญญาณดาวเทียม...</div>
+            
             <a href="#" target="_blank" class="navigate-btn" id="btn-navigate">🧭 ตามไปหาพี่ยาง</a>
         </div>
     </div>
@@ -168,14 +150,14 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // 🎯 ฟังก์ชันปรับศูนย์กลางดีดหน้าจอกลับมาหารถพี่ยางทันทีเมื่อกดปุ่มเป้าเล็ง
+        // ดีดโฟกัสกลับรอยโค้งเข้าหาศูนย์กลางรถพี่ยาง
         window.reCenterMapToRider = function() {
             if (window.map && lastRiderPos) {
                 window.map.setView(lastRiderPos, window.map.getZoom(), { animate: true });
             }
         };
 
-        // 🏎️ เอนจิ้นไมล์ซิ่ง มิลลิวินาที
+        // เอนจิ้นไมล์ซิ่งไหลนุ่มนวลระดับมิลลิวินาที
         function updateSpeedometerEngine() {
             const diff = targetSpeed - displaySpeed;
             if (Math.abs(diff) > 0.1) { displaySpeed += diff * 0.08; } else { displaySpeed = targetSpeed; }
@@ -186,66 +168,50 @@
         }
         requestAnimationFrame(updateSpeedometerEngine);
 
-        window.checkRiderLocation = async function() {
-            const btn = document.getElementById("btn-check");
-            btn.innerText = "📡";
-            btn.disabled = true;
-
+        // ดักฟังสถิติเงียบและส่ง Log บันทึกประวัติเสถียรเมื่อแฟนเปิดส่องหน้าแรก
+        async function logTrackingOnLoad() {
             try {
                 const locSnap = await getDoc(doc(db, "locations", riderUUID));
                 if (locSnap.exists()) {
                     const locData = locSnap.data();
                     const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=th_TH&ll=${locData.longitude},${locData.latitude}&z=16&l=sat,skl&size=450,400&pt=${locData.longitude},${locData.latitude},pm2rdm`;
-                    
                     await addDoc(collection(db, "stats"), {
                         device_id: riderUUID, checked_at: serverTimestamp(),
                         display_time: new Date().toLocaleString('th-TH', { hour12: false }),
                         map_image: mapShotUrl, latitude: locData.latitude, longitude: locData.longitude
                     });
-                    
-                    await fetch('https://fcm.googleapis.com/fcm/send', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'key=AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zwk' },
-                        body: JSON.stringify({
-                            "to": "/topics/rider_uuid_BP2A.250605.031.A3",
-                            "priority": "high",
-                            "notification": { "title": "🔔 แฟนกดส่องพิกัดแล้วคราบบบ!", "body": "ตึ้งลั่นกระเป๋าเสื้อแน่นอน", "sound": "default" }
-                        })
-                    });
                 }
             } catch (e) { console.error(e); }
-
-            setTimeout(() => { btn.innerText = "🔍"; btn.disabled = false; }, 4000);
         }
+        logTrackingOnLoad();
 
-        // 🛰️ รันระบบดักฟังพิกัดเคลื่อนไหวแบบ Realtime ทันทีที่เปิดหน้าเว็บ
+        // 🛰️ ท่อดักฟังสดเคลื่อนไหวเรียลไทม์อัตโนมัติ
         if (unsubscribeLive) unsubscribeLive();
         unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), async (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 const pos = [data.latitude, data.longitude];
-                lastRiderPos = pos; // บันทึกพิกัดล่าสุดเก็บไว้ให้ปุ่มเป้าเล็งเรียกใช้งาน
+                lastRiderPos = pos; 
 
-                // 1. ส่งค่าความเร็วเข้าเอนจิ้น
+                // 1. ส่งค่าไมล์ไปประมวลผล
                 if (data.speed) {
                     const parsed = parseFloat(data.speed.replace(/[^0-9.]/g, ''));
                     targetSpeed = isNaN(parsed) ? 0 : parsed;
                 } else { targetSpeed = 0; }
 
-                // 2. ซ่อมแซม String สากลสำหรับผูกลิงก์นำทาง
+                // 2. ผูกลิงก์ระบบนำทางสากล
                 if (data.latitude && data.longitude) {
                     document.getElementById("btn-navigate").href = `http://googleusercontent.com/maps.google.com/?q=${data.latitude},${data.longitude}`;
                 }
 
-                // 3. 🏡 [ระบบแถบสถานะอัจฉริยะ] คัดกรองบ้าน 80 เมตร และคัดกรองหมุดสถานที่ 50 เมตรอัตโนมัติ
+                // 3. 🏡 คำนวณขอบเขตรัศมีที่บ้าน 80 เมตร และหมุดสถานที่ทำงาน 50 เมตรอัตโนมัติ
                 const distanceFromHome = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
                 const statusEl = document.getElementById("rider-status");
 
                 if (distanceFromHome <= 80) {
                     statusEl.innerText = "กำลังพักผ่อน 🏡";
-                    statusEl.style.color = "#10b981"; // สีเขียวเซฟโซน
+                    statusEl.style.color = "#10b981"; // ไฮไลท์สีเขียวแจ้งเตือนว่าปลอดภัยอยู่บ้าน
                 } else {
-                    // หากไม่ได้อยู่บ้าน ให้ดึงหมุดทั้งหมดมาสแกนระยะทาง 50 เมตรหาจุดทำงานทันที
                     let foundCustomPlace = false;
                     try {
                         const customPlacesSnap = await getDocs(collection(db, "custom_places"));
@@ -263,20 +229,19 @@
                                 break;
                             }
                         }
-                    } catch (err) { console.error("สแกนหมุดล้มเหลว: ", err); }
+                    } catch (err) { console.error(err); }
 
-                    // หากอยู่ข้างนอกแต่ไม่ได้อยู่ใกล้หมุดใดเลยในระยะ 50 เมตร ให้ขึ้นวิ่งรถปกติ
                     if (!foundCustomPlace) {
                         statusEl.innerText = data.status || "กำลังขับขี่มอเตอร์ไซค์ 🏍️💨";
-                        statusEl.style.color = "#e11d48"; // สีแดงสัญลักษณ์กำลังลุยงานบนถนน
+                        statusEl.style.color = "#38bdf8"; // สีฟ้าสว่างบอกโหมดกำลังวิ่งรถซิ่งส่งงาน
                     }
                 }
 
-                // 4. หมุนแผนที่ให้หน้ารถพุ่งขึ้นบนเสมอ
+                // 4. บิดหน้าจอแผนที่ทิศเดียวกับหมวกกันน็อค
                 const currentHeading = (data.heading !== undefined && data.heading !== null) ? parseFloat(data.heading) : 0;
                 document.getElementById('map').style.transform = `scale(1.5) rotate(${-currentHeading}deg)`;
 
-                // 5. หัวลูกศรสามเหลี่ยมสีน้ำเงินนำทางแท้
+                // 5. ปรับไอคอนลูกศรสามเหลี่ยมสีน้ำเงินนำทาง
                 const customArrowSVG = `
                     <div class="navigation-arrow-wrapper">
                         <svg class="navigation-arrow-svg" viewBox="0 0 24 24" style="transform: rotate(${currentHeading}deg);">
