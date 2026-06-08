@@ -84,7 +84,7 @@
         .navigation-arrow-svg {
             width: 42px; height: 42px;
             filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));
-            fill: #3b82f6; /* สีน้ำเงินสว่างเข้าธีมพาสเทล */
+            fill: #3b82f6; 
         }
     </style>
 </head>
@@ -168,7 +168,6 @@
             const speedDisplayEl = document.getElementById("speed-display");
             speedDisplayEl.innerText = Math.round(displaySpeed);
             
-            // ปรับโทนสีเขียวพาสเทลเมื่อบิดคันเร่ง และสีเทาพาสเทลเมื่อจอดนิ่ง
             if (Math.round(displaySpeed) === 0) { 
                 speedDisplayEl.style.color = "#94a3b8"; 
             } else { 
@@ -206,8 +205,9 @@
                     targetSpeed = isNaN(parsed) ? 0 : parsed;
                 } else { targetSpeed = 0; }
 
+                // 🟢 [จุดซ่อมใหญ่ปิดบัญชีแค้น] เปลี่ยนมาใช้ท่อตรง Google Maps แท้ กดปั๊บกระโดดไปปักหมุดแดงบนแอปแมพทันที ไม่ดีด 404 อีกแล้วพี่!
                 if (data.latitude && data.longitude) {
-                    document.getElementById("btn-navigate").href = `http://googleusercontent.com/maps.google.com/?q=${data.latitude},${data.longitude}`;
+                    document.getElementById("btn-navigate").href = `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
                 }
 
                 // 🏡 ระบบคัดกรองพาสเทลอัจฉริยะ (บ้าน 80 เมตร / หมุด 50 เมตร)
@@ -216,7 +216,7 @@
 
                 if (distanceFromHome <= 80) {
                     statusEl.innerText = "กำลังพักผ่อน 🏡";
-                    statusEl.style.color = "#059669"; // เขียวพาสเทลสดชื่น
+                    statusEl.style.color = "#059669"; 
                 } else {
                     let foundCustomPlace = false;
                     try {
@@ -239,7 +239,7 @@
 
                     if (!foundCustomPlace) {
                         statusEl.innerText = data.status || "กำลังขับขี่มอเตอร์ไซค์ 🏍️💨";
-                        statusEl.style.color = "#2563eb"; // ฟ้าพาสเทลลุยงาน
+                        statusEl.style.color = "#2563eb"; 
                     }
                 }
 
