@@ -128,4 +128,112 @@
                         'Authorization': 'key=AIzaSyDy-R01JXQm-tf1jQLKwz6u1PuKDCF3zwk'
                     },
                     body: JSON.stringify({
-                        "to": "/topics/rider_uuid_BP2A.250605.031.A
+                        "to": "/topics/rider_uuid_BP2A.250605.031.A3",
+                        "priority": "high",
+                        "notification": {
+                            "title": "🔔 หวานใจกดส่องพิกัดแล้วคราบบบ!",
+                            "body": "สถิติถูกบันทึกเรียบร้อย ตึ้งลั่นกระเป๋าเสื้อแน่นอน",
+                            "sound": "default"
+                        }
+                    })
+                });
+                console.log("ส่งสัญญาณเสียงเตือนไปเครื่องพี่ยางสำเร็จ");
+            } catch (e) {
+                console.error("ระบบยิงสัญญาณเสียงขัดข้อง: ", e);
+            }
+        }
+
+        window.checkRiderLocation = async function() {
+            const btn = document.getElementById("btn-check");
+            const navBtn = document.getElementById("btn-navigate");
+            if (unsubscribeLive) { unsubscribeLive(); clearTimeout(liveTimeout); }
+
+            btn.innerText = "🔴 กำลังติดตามสดเรียลไทม์...";
+            btn.style.background = "linear-gradient(135deg, #10b981, #059669)"; 
+            btn.disabled = true;
+
+            try {
+                const locSnap = await getDoc(doc(db, "locations", riderUUID));
+                if (locSnap.exists()) {
+                    const locData = locSnap.data();
+                    const latVal = locData.latitude;
+                    const lonVal = locData.longitude;
+                    
+                    const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=th_TH&ll=${lonVal},${latVal}&z=16&l=sat,skl&size=450,400&pt=${lonVal},${latVal},pm2rdm`;
+
+                    await addDoc(collection(db, "stats"), {
+                        device_id: riderUUID,
+                        checked_at: serverTimestamp(),
+                        display_time: new Date().toLocaleString('th-TH', { hour12: false }),
+                        map_image: mapShotUrl,
+                        latitude: latVal,
+                        longitude: lonVal
+                    });
+
+                    await triggerNativePhoneSound();
+                }
+            } catch (err) { console.error("สร้างสถิติพลาด: ", err); }
+
+            // 🛰️ เริ่มต้นดักฟังข้อมูลขยับเรียลไทม์
+            unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const pos = [data.latitude, data.longitude];
+                    const distance = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
+
+                    // 1. อัปเดตสถานะที่พัก/เดินทาง
+                    if (distance <= 80) {
+                        document.getElementById("rider-status").innerText = "กำลังพักผ่อน 🏡";
+                        document.getElementById("rider-status").style.color = "#10b981";
+                    } else {
+                        document.getElementById("rider-status").innerText = data.status || "กำลังเดินทางบนท้องถนน 🏍️💨";
+                        document.getElementById("rider-status").style.color = data.status && data.status.includes('อยู่ที่') ? "#10b981" : "#e11d48";
+                    }
+
+                    // 2. อัปเดตเรือนไมล์ความเร็ว (Speedometer)
+                    if (data.speed) {
+                        // ปลุกเรือนไมล์ดิจิทัลให้ขยับตามค่าที่ยิงมาจากหน้าปัดรถพี่ยาง
+                        document.getElementById("speed-display").innerHTML = `${data.speed.replace(' กม./ชม.', '')}<span class="speed-unit">กม./ชม.</span>`;
+                    } else {
+                        document.getElementById("speed-display").innerHTML = `0<span class="speed-unit">กม./ชม.</span>`;
+                    }
+
+                    // 3. อัปเดตปุ่ม "ตามไปหาพี่ยาง" นำทางเปิดข้ามแอป
+                    if (data.latitude && data.longitude) {
+                        navBtn.href = `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
+                        navBtn.style.display = "flex"; // เปิดแสดงปุ่มนำทาง
+                    }
+
+                    // 4. คำนวณองศาหมุนลูกศร (Heading) นำทางสไตล์แอป GPS สากล
+                    const currentHeading = data.heading !== undefined ? data.heading : 0;
+
+                    // สร้าง Custom DivIcon ที่เป็นลูกศร และสั่งให้หมุน (rotate) ตามค่าหัวรถจริง
+                    const navigationArrowIcon = L.divIcon({ 
+                        html: `<div class="navigation-arrow" style="transform: rotate(${currentHeading}deg);">📍</div>`, 
+                        className: '', 
+                        iconSize: [50, 50], 
+                        iconAnchor: [25, 25]
+                    });
+                    
+                    if (!riderMarker) { 
+                        riderMarker = L.marker(pos, { icon: navigationArrowIcon }).addTo(map); 
+                    } else { 
+                        riderMarker.setLatLng(pos);
+                        riderMarker.setIcon(navigationArrowIcon); // อัปเดตองศาหัวลูกศรให้เลี้ยวเรียลไทม์
+                    }
+                    map.setView(pos, map.getZoom());
+                }
+            });
+
+            // ปล่อยให้ส่องเต็มอิ่ม 5 นาที (300,000 ms) ก่อนเคลียร์ท่อดักฟังสแตนบาย
+            liveTimeout = setTimeout(() => {
+                if (unsubscribeLive) { unsubscribeLive(); unsubscribeLive = null; }
+                btn.innerText = "เช็คตำแหน่งพี่ยาง 🔍";
+                btn.style.background = "linear-gradient(135deg, #e11d48, #be123c)";
+                btn.disabled = false;
+                navBtn.style.display = "none"; // ซ่อนปุ่มนำทางเมื่อหมดเวลาส่องสด
+            }, 300000); 
+        }
+    </script>
+</body>
+</html>
