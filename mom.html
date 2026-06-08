@@ -131,8 +131,10 @@
         
         // 🎯 [จุดสำคัญสูงสุดที่ 1] ใส่เลข UUID ของเครื่องคุณแม่ตรงนี้ให้ตรงกับในแอปเลยพี่!
         const riderUUID = "MOM_GPS_2026"; 
-        const homeLatitude = 12.647361;  
-        const homeLongitude = 102.094667; 
+        const homeLatitude = 12.377497;  
+        const homeLongitude = 102.381799; 
+
+
 
         window.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([homeLatitude, homeLongitude], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window.map);
