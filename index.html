@@ -132,10 +132,10 @@
                     targetDistance = isNaN(parsedDist) ? 0.0 : parsedDist;
                 } else { targetDistance = 0.0; }
 
+                 // 🟢 [จุดซ่อมใหญ่ปิดบัญชีแค้น] เปลี่ยนมาใช้ท่อตรง Google Maps แท้ กดปั๊บกระโดดไปปักหมุดแดงบนแอปแมพทันที ไม่ดีด 404 อีกแล้วพี่!
                 if (data.latitude && data.longitude) {
-                    document.getElementById("btn-navigate").href = `http://googleusercontent.com/maps.google.com/?q=${data.latitude},${data.longitude}`;
+                    document.getElementById("btn-navigate").href = `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
                 }
-
                 const R = 6371000;
                 const dLat = (data.latitude - homeLatitude) * Math.PI / 180;
                 const dLon = (data.longitude - homeLongitude) * Math.PI / 180;
