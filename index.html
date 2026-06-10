@@ -8,112 +8,66 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: #0f172a; overflow: hidden; height: 100vh; }
+        #map-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; overflow: hidden; background: #e5e5e5; }
+        #map { width: 100%; height: 100%; transform: scale(1.5); transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
         
-        /* 🗺️ คอนเทนเนอร์แผนที่เต็มจอ ขยายสเกล 1.5 เท่าหมุนไร้ขอบดำ */
-        #map-container {
-            width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1;
-            overflow: hidden; background: #e5e5e5;
-        }
-        #map { 
-            width: 100%; height: 100%; 
-            transform: scale(1.5); 
-            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        
-        /* 🏎️ [Pastel] หน้าปัดเรือนไมล์ดิจิทัล ลบสีมืดเปลี่ยนเป็นสีมิ้นท์พาสเทลละมุนตา */
         .speedometer-hud {
             position: absolute; top: 20px; left: 20px; z-index: 1000;
             background: rgba(224, 242, 254, 0.9); padding: 10px 18px; border-radius: 18px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.12); border: 2px solid #67e8f9;
             backdrop-filter: blur(8px); text-align: center; min-width: 90px;
         }
-        .speed-badge {
-            color: #059669; font-size: 38px; font-weight: 900; font-family: monospace;
-            text-shadow: 0 0 8px rgba(5, 150, 105, 0.3); line-height: 1;
-        }
+        .speed-badge { color: #059669; font-size: 38px; font-weight: 900; font-family: monospace; text-shadow: 0 0 8px rgba(5, 150, 105, 0.3); line-height: 1; }
         .speed-unit { font-size: 11px; color: #64748b; display: block; margin-top: 4px; font-weight: bold; text-shadow: none; }
 
-        /* 🧭 ปุ่มควบคุมมุมบนขวามือ (ซูมเข้า, ซูมออก, ปรับศูนย์กลาง) */
-        .custom-zoom-controls {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 6px;
-        }
+        .custom-zoom-controls { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 6px; }
         .zoom-btn {
-            width: 44px; height: 44px; background: white; border: none;
-            border-radius: 12px; font-size: 20px; font-weight: bold; color: #1e293b;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: background 0.2s, transform 0.1s;
+            width: 44px; height: 44px; background: white; border: none; border-radius: 12px; font-size: 20px; font-weight: bold; color: #1e293b;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;
         }
         .zoom-btn:active { background: #f1f5f9; transform: scale(0.95); }
 
-        /* 📍 แผงโครงสร้างแดชบอร์ดล่าง สมมาตรกึ่งกลางเป๊ะ ไม่เบี้ยวขวา */
-        .bottom-hud-container {
-            position: absolute; bottom: 30px; left: 0; right: 0; z-index: 1000;
-            display: flex; justify-content: center; width: 100%; pointer-events: none;
-        }
-        
-        /* [Pastel] ปรับกล่องแดชบอร์ดหลักให้เป็นโทนสีขาวนมอุ่นๆ สไตล์พาสเทลมินิมอล */
+        .bottom-hud-container { position: absolute; bottom: 30px; left: 0; right: 0; z-index: 1000; display: flex; justify-content: center; width: 100%; pointer-events: none; }
         .unified-dashboard {
-            background: rgba(255, 255, 255, 0.94); padding: 18px; border-radius: 24px;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15); width: 85%; max-width: 340px;
-            backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.7);
-            display: flex; flex-direction: column; gap: 12px; text-align: center;
-            box-sizing: border-box; pointer-events: auto;
+            background: rgba(255, 255, 255, 0.94); padding: 18px; border-radius: 24px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15); width: 85%; max-width: 340px;
+            backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.7); display: flex; flex-direction: column; gap: 10px; text-align: center; box-sizing: border-box; pointer-events: auto;
         }
+        .hud-status-text { font-weight: 700; font-size: 15px; color: #334155; margin: 0; letter-spacing: 0.5px; }
         
-        /* ส่วนข้อความแสดงสถานะพาสเทล */
-        .hud-status-text {
-            font-weight: 700; font-size: 15px; color: #334155; margin: 0;
-            letter-spacing: 0.5px;
-        }
+        /* แถบกิโลเมตรสะสมประจำวันดีไซน์พาสเทลสวยงามลอยตรงกลาง */
+        .hud-distance-text { font-weight: bold; font-size: 13px; color: #0284c7; background: #e0f2fe; padding: 4px 12px; border-radius: 50px; display: inline-block; margin: 0 auto; }
 
-        /* [Pastel] ปรับปุ่มนำทางเป็นโทนสีฟ้าพาสเทล (Sky Blue Pastel) ถนอมสายตา */
         .navigate-btn {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6); color: white;
-            border: none; padding: 12px 20px; font-size: 16px; font-weight: bold;
-            border-radius: 14px; cursor: pointer; width: 100%; box-sizing: border-box;
-            box-shadow: 0 4px 14px rgba(96, 165, 250, 0.4); 
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            text-decoration: none; transition: background 0.2s, transform 0.1s;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6); color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 14px;
+            cursor: pointer; width: 100%; box-sizing: border-box; box-shadow: 0 4px 14px rgba(96, 165, 250, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background 0.2s, transform 0.1s;
         }
         .navigate-btn:active { transform: scale(0.98); }
 
-        /* หัวลูกศรนำทาง Navigation Arrow สามเหลี่ยมแท้ */
         .navigation-arrow-wrapper { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
-        .navigation-arrow-svg {
-            width: 42px; height: 42px;
-            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));
-            fill: #3b82f6; 
-        }
+        .navigation-arrow-svg { width: 42px; height: 42px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); fill: #3b82f6; }
     </style>
 </head>
 <body>
 
-    <div id="map-container">
-        <div id="map"></div>
-    </div>
+    <div id="map-container"><div id="map"></div></div>
     
-    <!-- 🏎️ เรือนไมล์ HUD บนซ้าย สีพาสเทลเขียวมิ้นท์ -->
     <div class="speedometer-hud">
         <div class="speed-badge" id="speed-display">0</div>
         <span class="speed-unit">กม./ชม.</span>
     </div>
 
-    <!-- 🧭 ปุ่มควบคุมมุมบนขวา ดีไซน์สีขาวละมุนตา -->
     <div class="custom-zoom-controls">
         <button class="zoom-btn" onclick="window.map.zoomIn()">＋</button>
         <button class="zoom-btn" onclick="window.map.zoomOut()">－</button>
-        <button class="zoom-btn" onclick="window.reCenterMapToRider()" title="จัดศูนย์กลางไปตำแหน่งพี่ยาง">🎯</button>
+        <button class="zoom-btn" onclick="window.reCenterMapToRider()">🎯</button>
     </div>
     
-    <!-- 📍 แผงแดชบอร์ดล่างชิ้นเดียว ธีมสีขาวนมนุ่มฟูสไตล์พาสเทล -->
     <div class="bottom-hud-container">
         <div class="unified-dashboard">
-            <!-- สถานะปักหมุดรัศมีและที่บ้าน -->
             <div class="hud-status-text" id="rider-status">กำลังค้นหาสัญญาณพี่ยาง...</div>
             
-            <!-- ปุ่มนำทางสีฟ้าพาสเทลหวานๆ -->
+            <div class="hud-distance-text" id="distance-display">วันนี้วิ่งแล้ว: 0.00 กม.</div>
+            
             <a href="#" target="_blank" class="navigate-btn" id="btn-navigate">🧭 ตามไปหาพี่ยาง</a>
         </div>
     </div>
@@ -144,54 +98,29 @@
         let riderMarker;
         let lastRiderPos = [homeLatitude, homeLongitude];
         let unsubscribeLive = null;
-        let targetSpeed = 0;
-        let displaySpeed = 0;
-
-        function getDistanceInMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371000;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-        }
+        let targetSpeed = 0; let displaySpeed = 0;
+        let targetDistance = 0; let displayDistance = 0; // เอนจิ้นคุมการไหลของตัวเลขกิโลเมตร
 
         window.reCenterMapToRider = function() {
-            if (window.map && lastRiderPos) {
-                window.map.setView(lastRiderPos, window.map.getZoom(), { animate: true });
-            }
+            if (window.map && lastRiderPos) { window.map.setView(lastRiderPos, window.map.getZoom(), { animate: true }); }
         };
 
-        // เอนจิ้นไมล์ซิ่งไหลนุ่มนวลระดับมิลลิวินาที
-        function updateSpeedometerEngine() {
-            const diff = targetSpeed - displaySpeed;
-            if (Math.abs(diff) > 0.1) { displaySpeed += diff * 0.08; } else { displaySpeed = targetSpeed; }
-            const speedDisplayEl = document.getElementById("speed-display");
-            speedDisplayEl.innerText = Math.round(displaySpeed);
+        // มิลลิวินาทีคอนโซลเอนจิ้น (คุมความเร็วรถ + ระยะทางรวม ให้ไหลนุ่มละมุนตามล้อจริง)
+        function updateDashboardEngine() {
+            // 1. ความเร็วรถ กม./ชม.
+            const sDiff = targetSpeed - displaySpeed;
+            if (Math.abs(sDiff) > 0.1) { displaySpeed += sDiff * 0.08; } else { displaySpeed = targetSpeed; }
+            document.getElementById("speed-display").innerText = Math.round(displaySpeed);
+            document.getElementById("speed-display").style.color = Math.round(displaySpeed) === 0 ? "#94a3b8" : "#059669";
             
-            if (Math.round(displaySpeed) === 0) { 
-                speedDisplayEl.style.color = "#94a3b8"; 
-            } else { 
-                speedDisplayEl.style.color = "#059669"; 
-            }
-            requestAnimationFrame(updateSpeedometerEngine);
-        }
-        requestAnimationFrame(updateSpeedometerEngine);
+            // 2. ระยะทางสะสมรายวัน ไหลขึ้นทีละเซนติเมตรตามแรงบิดจริง
+            const dDiff = targetDistance - displayDistance;
+            if (Math.abs(dDiff) > 0.005) { displayDistance += dDiff * 0.05; } else { displayDistance = targetDistance; }
+            document.getElementById("distance-display").innerText = `วันนี้วิ่งแล้ว: ${displayDistance.toFixed(2)} กม.`;
 
-        async function logTrackingOnLoad() {
-            try {
-                const locSnap = await getDoc(doc(db, "locations", riderUUID));
-                if (locSnap.exists()) {
-                    const locData = locSnap.data();
-                    const mapShotUrl = `https://static-maps.yandex.ru/1.x/?lang=th_TH&ll=${locData.longitude},${locData.latitude}&z=16&l=sat,skl&size=450,400&pt=${locData.longitude},${locData.latitude},pm2rdm`;
-                    await addDoc(collection(db, "stats"), {
-                        device_id: riderUUID, checked_at: serverTimestamp(),
-                        display_time: new Date().toLocaleString('th-TH', { hour12: false }),
-                        map_image: mapShotUrl, latitude: locData.latitude, longitude: locData.longitude
-                    });
-                }
-            } catch (e) { console.error(e); }
+            requestAnimationFrame(updateDashboardEngine);
         }
-        logTrackingOnLoad();
+        requestAnimationFrame(updateDashboardEngine);
 
         if (unsubscribeLive) unsubscribeLive();
         unsubscribeLive = onSnapshot(doc(db, "locations", riderUUID), async (docSnap) => {
@@ -205,67 +134,49 @@
                     targetSpeed = isNaN(parsed) ? 0 : parsed;
                 } else { targetSpeed = 0; }
 
-                // 🟢 [จุดซ่อมใหญ่ปิดบัญชีแค้น] เปลี่ยนมาใช้ท่อตรง Google Maps แท้ กดปั๊บกระโดดไปปักหมุดแดงบนแอปแมพทันที ไม่ดีด 404 อีกแล้วพี่!
+                // รับค่าระยะทางกิโลเมตรสะสมส่งต่อเข้าเอนจิ้นมิลลิวินาที
+                if (data.daily_distance) {
+                    const parsedDist = parseFloat(data.daily_distance.replace(/[^0-9.]/g, ''));
+                    targetDistance = isNaN(parsedDist) ? 0.0 : parsedDist;
+                } else { targetDistance = 0.0; }
+
                 if (data.latitude && data.longitude) {
-                    document.getElementById("btn-navigate").href = `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
+                    document.getElementById("btn-navigate").href = `http://googleusercontent.com/maps.google.com/?q=${data.latitude},${data.longitude}`;
                 }
 
-                // 🏡 ระบบคัดกรองพาสเทลอัจฉริยะ (บ้าน 80 เมตร / หมุด 50 เมตร)
-                const distanceFromHome = getDistanceInMeters(data.latitude, data.longitude, homeLatitude, homeLongitude);
+                // ตรวจสแกนหมุดรัศมีเซฟโซน
+                const R = 6371000;
+                const dLat = (data.latitude - homeLatitude) * Math.PI / 180;
+                const dLon = (data.longitude - homeLongitude) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(homeLatitude * Math.PI / 180) * Math.cos(data.latitude * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+                const distanceFromHome = R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
                 const statusEl = document.getElementById("rider-status");
 
                 if (distanceFromHome <= 80) {
-                    statusEl.innerText = "กำลังพักผ่อน 🏡";
-                    statusEl.style.color = "#059669"; 
+                    statusEl.innerText = "กำลังพักผ่อน 🏡"; statusEl.style.color = "#059669";
                 } else {
                     let foundCustomPlace = false;
                     try {
                         const customPlacesSnap = await getDocs(collection(db, "custom_places"));
                         for (const placeDoc of customPlacesSnap.docs) {
                             const pData = placeDoc.data();
-                            const pLat = parseFloat(pData.latitude);
-                            const pLon = parseFloat(pData.longitude);
-                            const pName = pData.place_name || "";
-                            
-                            const distToPlace = getDistanceInMeters(data.latitude, data.longitude, pLat, pLon);
-                            if (distToPlace <= 50.0) {
-                                statusEl.innerText = `อยู่ที่: ${pName} 📍`;
-                                statusEl.style.color = "#059669";
-                                foundCustomPlace = true;
-                                break;
+                            const pLat = parseFloat(pData.latitude); const pLon = parseFloat(pData.longitude);
+                            const dLat2 = (data.latitude - pLat) * Math.PI / 180; const dLon2 = (data.longitude - pLon) * Math.PI / 180;
+                            const a2 = Math.sin(dLat2/2) * Math.sin(dLat2/2) + Math.cos(pLat * Math.PI / 180) * Math.cos(data.latitude * Math.PI / 180) * Math.sin(dLon2/2) * Math.sin(dLon2/2);
+                            if ((R * (2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1-a2)))) <= 50.0) {
+                                statusEl.innerText = `อยู่ที่: ${pData.place_name || ""} 📍`; statusEl.style.color = "#059669"; foundCustomPlace = true; break;
                             }
                         }
-                    } catch (err) { console.error(err); }
-
-                    if (!foundCustomPlace) {
-                        statusEl.innerText = data.status || "กำลังขับขี่มอเตอร์ไซค์ 🏍️💨";
-                        statusEl.style.color = "#2563eb"; 
-                    }
+                    } catch (err) {}
+                    if (!foundCustomPlace) { statusEl.innerText = data.status || "กำลังขับขี่มอเตอร์ไซค์ 🏍️💨"; statusEl.style.color = "#2563eb"; }
                 }
 
                 const currentHeading = (data.heading !== undefined && data.heading !== null) ? parseFloat(data.heading) : 0;
                 document.getElementById('map').style.transform = `scale(1.5) rotate(${-currentHeading}deg)`;
 
-                const customArrowSVG = `
-                    <div class="navigation-arrow-wrapper">
-                        <svg class="navigation-arrow-svg" viewBox="0 0 24 24" style="transform: rotate(${currentHeading}deg);">
-                            <path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
-                        </svg>
-                    </div>
-                `;
-
-                const navigationArrowIcon = L.divIcon({ 
-                    html: customArrowSVG, 
-                    className: '', iconSize: [50, 50], iconAnchor: [25, 25]
-                });
-                
-                if (!riderMarker) { 
-                    riderMarker = L.marker(pos, { icon: navigationArrowIcon }).addTo(window.map); 
-                } else { 
-                    riderMarker.setLatLng(pos);
-                    riderMarker.setIcon(navigationArrowIcon);
-                }
-                
+                const customArrowSVG = `<div class="navigation-arrow-wrapper"><svg class="navigation-arrow-svg" viewBox="0 0 24 24" style="transform: rotate(${currentHeading}deg);"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/></svg></div>`;
+                const navigationArrowIcon = L.divIcon({ html: customArrowSVG, className: '', iconSize: [50, 50], iconAnchor: [25, 25] });
+                if (!riderMarker) { riderMarker = L.marker(pos, { icon: navigationArrowIcon }).addTo(window.map); } else { riderMarker.setLatLng(pos); riderMarker.setIcon(navigationArrowIcon); }
                 window.map.setView(pos, window.map.getZoom(), { animate: true });
             }
         });
