@@ -33,8 +33,6 @@
             backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.7); display: flex; flex-direction: column; gap: 10px; text-align: center; box-sizing: border-box; pointer-events: auto;
         }
         .hud-status-text { font-weight: 700; font-size: 15px; color: #334155; margin: 0; letter-spacing: 0.5px; }
-        
-        /* แถบกิโลเมตรสะสมประจำวันดีไซน์พาสเทลสวยงามลอยตรงกลาง */
         .hud-distance-text { font-weight: bold; font-size: 13px; color: #0284c7; background: #e0f2fe; padding: 4px 12px; border-radius: 50px; display: inline-block; margin: 0 auto; }
 
         .navigate-btn {
@@ -65,9 +63,7 @@
     <div class="bottom-hud-container">
         <div class="unified-dashboard">
             <div class="hud-status-text" id="rider-status">กำลังค้นหาสัญญาณพี่ยาง...</div>
-            
             <div class="hud-distance-text" id="distance-display">วันนี้วิ่งแล้ว: 0.00 กม.</div>
-            
             <a href="#" target="_blank" class="navigate-btn" id="btn-navigate">🧭 ตามไปหาพี่ยาง</a>
         </div>
     </div>
@@ -99,21 +95,18 @@
         let lastRiderPos = [homeLatitude, homeLongitude];
         let unsubscribeLive = null;
         let targetSpeed = 0; let displaySpeed = 0;
-        let targetDistance = 0; let displayDistance = 0; // เอนจิ้นคุมการไหลของตัวเลขกิโลเมตร
+        let targetDistance = 0; let displayDistance = 0;
 
         window.reCenterMapToRider = function() {
             if (window.map && lastRiderPos) { window.map.setView(lastRiderPos, window.map.getZoom(), { animate: true }); }
         };
 
-        // มิลลิวินาทีคอนโซลเอนจิ้น (คุมความเร็วรถ + ระยะทางรวม ให้ไหลนุ่มละมุนตามล้อจริง)
         function updateDashboardEngine() {
-            // 1. ความเร็วรถ กม./ชม.
             const sDiff = targetSpeed - displaySpeed;
             if (Math.abs(sDiff) > 0.1) { displaySpeed += sDiff * 0.08; } else { displaySpeed = targetSpeed; }
             document.getElementById("speed-display").innerText = Math.round(displaySpeed);
             document.getElementById("speed-display").style.color = Math.round(displaySpeed) === 0 ? "#94a3b8" : "#059669";
             
-            // 2. ระยะทางสะสมรายวัน ไหลขึ้นทีละเซนติเมตรตามแรงบิดจริง
             const dDiff = targetDistance - displayDistance;
             if (Math.abs(dDiff) > 0.005) { displayDistance += dDiff * 0.05; } else { displayDistance = targetDistance; }
             document.getElementById("distance-display").innerText = `วันนี้วิ่งแล้ว: ${displayDistance.toFixed(2)} กม.`;
@@ -134,7 +127,6 @@
                     targetSpeed = isNaN(parsed) ? 0 : parsed;
                 } else { targetSpeed = 0; }
 
-                // รับค่าระยะทางกิโลเมตรสะสมส่งต่อเข้าเอนจิ้นมิลลิวินาที
                 if (data.daily_distance) {
                     const parsedDist = parseFloat(data.daily_distance.replace(/[^0-9.]/g, ''));
                     targetDistance = isNaN(parsedDist) ? 0.0 : parsedDist;
@@ -144,7 +136,6 @@
                     document.getElementById("btn-navigate").href = `http://googleusercontent.com/maps.google.com/?q=${data.latitude},${data.longitude}`;
                 }
 
-                // ตรวจสแกนหมุดรัศมีเซฟโซน
                 const R = 6371000;
                 const dLat = (data.latitude - homeLatitude) * Math.PI / 180;
                 const dLon = (data.longitude - homeLongitude) * Math.PI / 180;
