@@ -94,7 +94,7 @@
 
         window.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([homeLatitude, homeLongitude], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window.map);
-        L.circle([homeLatitude, homeLongitude], { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 80 }).addTo(window.map);
+        L.circle([homeLatitude, homeLongitude], { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, radius: 20 }).addTo(window.map);
 
         let riderMarker;
         let lastRiderPos = [homeLatitude, homeLongitude];
